@@ -1,5 +1,5 @@
 {
-  "name": "once-upon-you-server",
+  "name": "twice-upon-us-server",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -8,11 +8,16 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "heic-convert": "^2.1.0",
+    "jsonwebtoken": "^9.0.3",
     "multer": "^1.4.5-lts.1",
-    "openai": "^4.63.0"
+    "nodemailer": "^8.0.7",
+    "openai": "^4.63.0",
+    "sharp": "^0.34.5",
+    "stripe": "^20.4.1"
   }
 }

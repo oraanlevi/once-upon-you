@@ -29,6 +29,7 @@ server/.env
 
 # Generated coloring pages
 server/generated-orders/
+server/persistent-cache/
 
 # Completed customer orders
 server/orders/

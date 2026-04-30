@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "id": "958c0ad2-1d03-4584-b80a-fd59f2a16965",
+      "email": "test@test.com",
+      "firstName": "",
+      "lastName": "",
+      "passwordHash": "$2b$12$HLzN/tSZk.hUQe2kqj6lj.B.y/KYE2GvyYpjW3xDLG/uqbQQNVqWC",
+      "savedShipping": null,
+      "createdAt": "2026-04-29T18:11:11.476Z"
+    },
+    {
+      "id": "26be0de7-0e58-4a6e-99c1-e9ad34416dc5",
+      "email": "oraanlevi1@gmail.com",
+      "firstName": "Oraan",
+      "lastName": "Levi",
+      "passwordHash": "$2b$12$us7XOQa/rnSo.GG3mwcgxuBIDy0BdnjR68iMGD/m9c4nogNuf35.G",
+      "savedShipping": null,
+      "createdAt": "2026-04-30T00:40:20.499Z"
+    }
+  ]
+}

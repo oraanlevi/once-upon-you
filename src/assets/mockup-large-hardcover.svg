@@ -1,0 +1,27 @@
+<svg width="320" height="220" viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cover" x1="92" y1="26" x2="244" y2="188" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8397B8"/>
+      <stop offset="1" stop-color="#40597A"/>
+    </linearGradient>
+    <linearGradient id="spine" x1="76" y1="30" x2="108" y2="186" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4C6385"/>
+      <stop offset="1" stop-color="#2B425F"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="320" height="220" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#20344E" flood-opacity="0.24"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M78 34C78 27.3726 83.3726 22 90 22H228C234.627 22 240 27.3726 240 34V182H90C83.3726 182 78 176.627 78 170V34Z" fill="url(#spine)"/>
+    <path d="M100 28H232C239.732 28 246 34.268 246 42V176C246 183.732 239.732 190 232 190H100V28Z" fill="url(#cover)"/>
+    <path d="M246 42V176C246 183.732 239.732 190 232 190H224C231.732 190 238 183.732 238 176V42C238 34.268 231.732 28 224 28H232C239.732 28 246 34.268 246 42Z" fill="#D7E0EC" fill-opacity="0.78"/>
+    <rect x="122" y="52" width="74" height="10" rx="5" fill="#F5F9FF" fill-opacity="0.72"/>
+    <rect x="122" y="70" width="102" height="7" rx="3.5" fill="#C9D6E7"/>
+    <rect x="122" y="83" width="94" height="7" rx="3.5" fill="#D8E2EF"/>
+    <rect x="130" y="104" width="92" height="50" rx="15" fill="#9CB0CC" fill-opacity="0.88"/>
+    <path d="M145 147C152.289 128.113 169.298 115 189 115C208.702 115 225.711 128.113 233 147" stroke="#DDE7F5" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="189" cy="106" r="20" fill="#D9E2EF"/>
+    <rect x="201" y="38" width="28" height="15" rx="7.5" fill="#E8EEF6" fill-opacity="0.52"/>
+  </g>
+</svg>

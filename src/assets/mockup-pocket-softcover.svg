@@ -1,0 +1,27 @@
+<svg width="320" height="220" viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cover" x1="78" y1="34" x2="220" y2="174" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E9D4B9"/>
+      <stop offset="1" stop-color="#CDA779"/>
+    </linearGradient>
+    <linearGradient id="spine" x1="66" y1="44" x2="100" y2="172" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8B285"/>
+      <stop offset="1" stop-color="#A87D53"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="320" height="220" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#5A4027" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M70 42C70 35.3726 75.3726 30 82 30H204C210.627 30 216 35.3726 216 42V176H82C75.3726 176 70 170.627 70 164V42Z" fill="url(#spine)"/>
+    <path d="M92 34H214C221.732 34 228 40.268 228 48V172C228 179.732 221.732 186 214 186H92V34Z" fill="url(#cover)"/>
+    <path d="M228 48V172C228 179.732 221.732 186 214 186H207C214.732 186 221 179.732 221 172V48C221 40.268 214.732 34 207 34H214C221.732 34 228 40.268 228 48Z" fill="#F2E2CF" fill-opacity="0.8"/>
+    <rect x="110" y="58" width="64" height="10" rx="5" fill="#FFF7ED" fill-opacity="0.74"/>
+    <rect x="110" y="76" width="92" height="7" rx="3.5" fill="#F8F1E7" fill-opacity="0.78"/>
+    <rect x="110" y="89" width="84" height="7" rx="3.5" fill="#F8F1E7" fill-opacity="0.66"/>
+    <rect x="120" y="112" width="78" height="44" rx="14" fill="#EDD6B8" fill-opacity="0.88"/>
+    <path d="M138 148C144.014 131.032 159.098 118 176.5 118C193.902 118 208.986 131.032 215 148" stroke="#B78E63" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="176" cy="109" r="18" fill="#D9B98F"/>
+    <rect x="188" y="44" width="24" height="14" rx="7" fill="#F4E5D3" fill-opacity="0.62"/>
+  </g>
+</svg>

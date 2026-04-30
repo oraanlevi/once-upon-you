@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const LOGO_SRC = '/src/assets/logo.png';
+const LOGO_SRC = '/src/assets/logo-stacked.png';
 
 function BrandLogo({ className = '' }) {
   const [hasError, setHasError] = useState(false);
@@ -13,7 +13,7 @@ function BrandLogo({ className = '' }) {
     <img
       className={className}
       src={LOGO_SRC}
-      alt="Once Upon You"
+      alt="Twice Upon Us"
       onError={() => setHasError(true)}
     />
   );

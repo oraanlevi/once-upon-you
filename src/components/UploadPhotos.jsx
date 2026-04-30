@@ -13,20 +13,53 @@ function UploadPhotos({
 
   return (
     <section className="upload-step" aria-labelledby="upload-step-title">
-      <div className="upload-shell">
-        <div className="upload-top">
+      <div className="upload-shell upload-shell--focused">
+        <div className="upload-top upload-top--focused">
           <button type="button" className="upload-back" onClick={onBack}>
             Back
           </button>
-          <p className="builder-eyebrow">Chapter 3</p>
-          <h2 id="upload-step-title">Upload Your Photos</h2>
+          <p className="builder-eyebrow">Step 2 of 3</p>
+          <h2 id="upload-step-title">Upload your photos</h2>
+          <p className="builder-lede upload-intro">
+            Each photo you upload becomes its own coloring page — hand-illustrated
+            and brought to life. The cover is designed for you, using the moments you share.
+          </p>
+          <div className="upload-guidance">
+            <div className="upload-guidance-title">📸 Tips for the best coloring pages</div>
+            <div className="upload-guidance-grid">
+              <div className="upload-guidance-item upload-guidance-item--good">
+                <span className="guidance-icon">✓</span>
+                <span>Clear, well-lit face (portrait works great)</span>
+              </div>
+              <div className="upload-guidance-item upload-guidance-item--good">
+                <span className="guidance-icon">✓</span>
+                <span>Subject fills most of the frame</span>
+              </div>
+              <div className="upload-guidance-item upload-guidance-item--good">
+                <span className="guidance-icon">✓</span>
+                <span>Sharp focus — not blurry or motion-blurred</span>
+              </div>
+              <div className="upload-guidance-item upload-guidance-item--bad">
+                <span className="guidance-icon">✗</span>
+                <span>Dark, shadowy, or backlit photos</span>
+              </div>
+              <div className="upload-guidance-item upload-guidance-item--good">
+                <span className="guidance-icon">✓</span>
+                <span>Crowded group shots (one subject per page)</span>
+              </div>
+              <div className="upload-guidance-item upload-guidance-item--good">
+                <span className="guidance-icon">✓</span>
+                <span>Sunglasses, hats covering the face</span>
+              </div>
+            </div>
+          </div>
           <p className="upload-progress">
-            Page {uploadedCount} of {pageCount} uploaded
+            {uploadedCount} of {pageCount} pages have a photo ready
           </p>
           {generationError ? <p className="generation-error">{generationError}</p> : null}
         </div>
 
-        <div className="upload-grid">
+        <div className="upload-grid upload-grid--focused">
           {uploads.map((image, index) => (
             <UploadCard
               key={index + 1}
@@ -37,14 +70,14 @@ function UploadPhotos({
           ))}
         </div>
 
-        <div className="upload-footer">
+        <div className="upload-footer upload-footer--focused">
           <button
             type="button"
             className="create-book-button"
             disabled={!allUploaded}
             onClick={onCreateBook}
           >
-            Create My Book
+            Continue to Preview
           </button>
         </div>
       </div>

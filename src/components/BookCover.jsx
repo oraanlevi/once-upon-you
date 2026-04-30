@@ -1,36 +1,42 @@
-import BrandLogo from './BrandLogo';
-
 function BookCover({ isOpening, onStart }) {
   return (
     <section className={`book-scene ${isOpening ? 'is-opening' : ''}`}>
-      <div className="book-shell">
+      <div className={`book-shell ${isOpening ? '' : 'book-shell--idle'}`}>
         <div className="book-spine" aria-hidden="true" />
 
         <div className="book-inside" aria-hidden="true">
           <div className="inside-glow" />
         </div>
 
-        <article className="book-cover" aria-label="Once Upon You cover">
+        <article className="book-cover" aria-label="Twice Upon Us cover">
           <div className="cover-filigree" aria-hidden="true" />
+          <div className="cover-edition" aria-hidden="true">Vol. I</div>
+
           <div className="cover-content">
-            <BrandLogo className="cover-logo" />
-            <p className="cover-kicker">A Story Worth Holding</p>
-            <h1 className="cover-title">Once Upon You</h1>
-            <p className="cover-tagline">
-              Turn cherished moments into a personalized coloring book that
-              feels like your own fairytale keepsake.
-            </p>
-            <button
-              type="button"
-              className="cover-button"
-              onClick={onStart}
-              disabled={isOpening}
-            >
-              Start Your Book
-            </button>
+            <div className="cover-group">
+              <img
+                src="/src/assets/logo-title-cropped.png"
+                alt="Twice Upon Us"
+                className="cover-logo-title"
+              />
+              <p className="cover-tagline">
+                Upload your favorite photos and we transform each one into a
+                beautiful hand-drawn coloring page — bound into a keepsake
+                book that's entirely yours.
+              </p>
+              <button
+                type="button"
+                className="cover-button"
+                onClick={onStart}
+                disabled={isOpening}
+              >
+                Start Your Book
+              </button>
+            </div>
           </div>
         </article>
       </div>
+
     </section>
   );
 }

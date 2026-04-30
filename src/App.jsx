@@ -1,24 +1,47 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
 import BookCover from './components/BookCover';
 import ChooseBook from './components/ChooseBook';
 import UploadPhotos from './components/UploadPhotos';
-import ProcessingStep from './components/ProcessingStep';
 import PreviewBook from './components/PreviewBook';
 import StepTracker from './components/StepTracker';
+import TopProgressBar from './components/TopProgressBar';
 import CheckoutPage from './components/CheckoutPage';
 import OrderSuccess from './components/OrderSuccess';
+import ProductShowcase from './components/ProductShowcase';
 import BrandLogo from './components/BrandLogo';
+import AuthModal from './components/AuthModal';
+import AccountPage from './components/AccountPage';
+import OrderStatusPage from './components/OrderStatusPage';
+import ContactModal from './components/ContactModal';
+import CustomizeBack from './components/CustomizeBack';
+import { calculateCartPricing, getDefaultPageCount, normalizeAvailablePageCounts } from './utils/pricing';
 import './App.css';
+import './styles/ui-system.css';
 
 const OPEN_DURATION_MS = 1450;
-const PAYMENT_DURATION_MS = 1500;
-const SUPPORT_EMAIL = 'support@onceuponyou.com';
-const STORAGE_KEY = 'once_upon_you_builder_v2';
-const SESSION_ID_STORAGE_KEY = 'once_upon_you_session_id';
-const COLORING_API_URL = 'http://localhost:5001/api/coloring-page';
-const COMPLETE_ORDER_API_URL = 'http://localhost:5001/api/orders/complete';
+const SUPPORT_EMAIL = 'twiceuponus@gmail.com';
+const STORAGE_KEY = 'twice_upon_us_builder_v3';
+const SESSION_ID_STORAGE_KEY = 'twice_upon_us_session_id';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001')
+  .trim()
+  .replace(/\/+$/, '');
+const COLORING_API_URL = `${API_BASE_URL}/api/coloring-page`;
+const COMPLETE_ORDER_API_URL = `${API_BASE_URL}/api/orders/complete`;
+const CREATE_PAYMENT_INTENT_API_URL = `${API_BASE_URL}/api/create-payment-intent`;
 const MAX_PERSISTED_UPLOADED_IMAGE_CHARS = 1_200_000;
 const MAX_PERSISTED_GENERATED_IMAGE_CHARS = 4_500_000;
+const SUPPORTED_UPLOAD_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+];
+const SUPPORTED_UPLOAD_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'];
+const STRIPE_PUBLISHABLE_KEY = (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '').trim();
+const hasValidPublishableStripeKey = /^pk_(test|live)_/.test(STRIPE_PUBLISHABLE_KEY);
+const stripePromise = hasValidPublishableStripeKey ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
 const DEFAULT_SHIPPING_DATA = {
   firstName: '',
@@ -30,20 +53,39 @@ const DEFAULT_SHIPPING_DATA = {
   country: '',
 };
 
+const DEFAULT_PRODUCT = {
+  id: 'storybook',
+  name: 'Custom Coloring Book',
+  productType: 'book',
+  isDigital: false,
+  isPhysical: true,
+  externalLink: '',
+  basePriceCents: 500,
+  pricePerPageCents: 100,
+  compareAtPriceCents: 800,
+  availablePageCounts: [2, 4, 6, 8],
+  addOns: [],
+};
+
 const TRACKER_STEPS = [
-  { key: 'cover', label: 'Cover' },
-  { key: 'choose', label: 'Choose Book' },
-  { key: 'upload', label: 'Upload Photos' },
-  { key: 'preview', label: 'Preview Pages' },
-  { key: 'finalize', label: 'Finalize Order' },
+  { key: 'cover',      label: 'The Idea',      shortLabel: 'Idea',     icon: '⌂' },
+  { key: 'showcase',   label: 'How It Works',  shortLabel: 'How',      icon: '✦' },
+  { key: 'choose',     label: 'Choose Book',   shortLabel: 'Book',     icon: '◈' },
+  { key: 'customize',  label: 'Back Cover',    shortLabel: 'Cover',    icon: '◉' },
+  { key: 'upload',     label: 'Upload Photos', shortLabel: 'Photos',   icon: '⇪' },
+  { key: 'preview',    label: 'Preview',       shortLabel: 'Preview',  icon: '▤' },
+  { key: 'finalize',   label: 'Checkout',      shortLabel: 'Checkout', icon: '◧' },
 ];
+
+const DEFAULT_TAGLINE = 'We turn your memories into a legendary story';
 
 const VALID_STEPS = new Set([
   'choose',
+  'customize',
   'upload',
-  'processing',
   'preview',
   'checkout',
+  'payment',
   'success',
 ]);
 
@@ -57,7 +99,8 @@ function createSessionId() {
 
 function clearBuilderStorage() {
   window.localStorage.removeItem(STORAGE_KEY);
-  window.localStorage.removeItem('once_upon_you_builder_v1');
+  window.localStorage.removeItem('twice_upon_us_builder_v2');
+  window.localStorage.removeItem('twice_upon_us_builder_v1');
   window.localStorage.removeItem(SESSION_ID_STORAGE_KEY);
 }
 
@@ -68,7 +111,9 @@ function loadPersistedSessionId() {
       return direct.trim();
     }
 
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw =
+      window.localStorage.getItem(STORAGE_KEY) ||
+      window.localStorage.getItem('twice_upon_us_builder_v2');
     if (!raw) {
       return '';
     }
@@ -100,6 +145,28 @@ function getDeliveryEstimate() {
   return `${formatter.format(from)} - ${formatter.format(to)}`;
 }
 
+function maskStripeKeyForLog(key) {
+  const normalized = typeof key === 'string' ? key.trim() : '';
+  const prefix = normalized.startsWith('pk_test_')
+    ? 'pk_test'
+    : normalized.startsWith('pk_live_')
+      ? 'pk_live'
+      : normalized.startsWith('sk_test_')
+        ? 'sk_test'
+        : normalized.startsWith('sk_live_')
+          ? 'sk_live'
+          : normalized
+            ? 'unknown'
+            : '';
+
+  return {
+    present: Boolean(normalized),
+    prefix,
+    last4: normalized ? normalized.slice(-4) : '',
+    validPublishable: normalized.startsWith('pk_'),
+  };
+}
+
 function revokeImageUrl(image) {
   if (!image?.url || image.isDataUrl || !image.url.startsWith('blob:')) {
     return;
@@ -122,9 +189,28 @@ function dataUrlToFile(dataUrl, name = 'photo.png') {
   return new File([bytes], name, { type: mimeType });
 }
 
+function getFileExtension(filename = '') {
+  const match = String(filename).toLowerCase().match(/(\.[a-z0-9]+)$/);
+  return match ? match[1] : '';
+}
+
+function isSupportedUploadFile(file) {
+  if (!(file instanceof File)) {
+    return false;
+  }
+
+  if (SUPPORTED_UPLOAD_MIME_TYPES.includes(file.type)) {
+    return true;
+  }
+
+  return SUPPORTED_UPLOAD_EXTENSIONS.includes(getFileExtension(file.name));
+}
+
 function loadPersistedBuilderState() {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw =
+      window.localStorage.getItem(STORAGE_KEY) ||
+      window.localStorage.getItem('twice_upon_us_builder_v2');
 
     if (!raw) {
       return null;
@@ -168,7 +254,7 @@ function loadPersistedBuilderState() {
     const uploadedCount = normalizedUploadedImages.filter(Boolean).length;
     const generatedCount = normalizedGeneratedImages.filter(Boolean).length;
 
-    const requiresPages = ['upload', 'processing', 'preview', 'checkout', 'success'].includes(
+    const requiresPages = ['upload', 'preview', 'checkout', 'payment', 'success'].includes(
       currentStep,
     );
     const hasValidPageState =
@@ -176,7 +262,7 @@ function loadPersistedBuilderState() {
       (normalizedUploadedImages.length === selectedPageCount ||
         normalizedGeneratedImages.length === selectedPageCount);
     const hasUploadsForLaterSteps =
-      !['preview', 'checkout', 'success'].includes(currentStep) ||
+      !['preview', 'checkout', 'payment', 'success'].includes(currentStep) ||
       uploadedCount > 0 ||
       generatedCount > 0;
     const hasSuccessState =
@@ -194,12 +280,12 @@ function loadPersistedBuilderState() {
     const introStage =
       parsed.introStage === 'cover' ||
       parsed.introStage === 'opening' ||
+      parsed.introStage === 'showcase' ||
       parsed.introStage === 'done'
         ? parsed.introStage
         : 'cover';
 
-    const normalizedIntroStage =
-      currentStep !== 'choose' && introStage !== 'done' ? 'done' : introStage;
+    const normalizedIntroStage = introStage !== 'done' && introStage !== 'showcase' ? 'done' : introStage;
 
     return {
       introStage:
@@ -218,7 +304,7 @@ function loadPersistedBuilderState() {
               number:
                 typeof parsed.orderInfo.number === 'string'
                   ? parsed.orderInfo.number
-                  : 'OUY-000000',
+                  : 'TUU-000000',
               deliveryEstimate:
                 typeof parsed.orderInfo.deliveryEstimate === 'string'
                   ? parsed.orderInfo.deliveryEstimate
@@ -233,20 +319,37 @@ function loadPersistedBuilderState() {
         typeof parsed.sessionId === 'string' && parsed.sessionId.trim()
           ? parsed.sessionId.trim()
           : createSessionId(),
+      selectedAddOnIds: Array.isArray(parsed.selectedAddOnIds)
+        ? parsed.selectedAddOnIds.filter((value) => typeof value === 'string')
+        : [],
+      addOnQuantities:
+        parsed.addOnQuantities && typeof parsed.addOnQuantities === 'object'
+          ? Object.fromEntries(
+              Object.entries(parsed.addOnQuantities).map(([key, value]) => [
+                key,
+                Number.parseInt(String(value), 10) || 1,
+              ]),
+            )
+          : {},
+      selectedProductId:
+        typeof parsed.selectedProductId === 'string' ? parsed.selectedProductId : null,
     };
   } catch {
     return null;
   }
 }
 
-async function requestColoringPage(image, { sessionId, pageIndex }) {
+async function requestColoringPage(image, { sessionId, pageIndex, sourceFile }) {
   if (!image?.url || typeof image.url !== 'string') {
     throw new Error('Invalid uploaded image data.');
   }
 
-  const file = image.isDataUrl
-    ? dataUrlToFile(image.url, image.name || 'photo.png')
-    : dataUrlToFile(image.url, 'photo.png');
+  const file =
+    sourceFile instanceof File
+      ? sourceFile
+      : image.isDataUrl
+        ? dataUrlToFile(image.url, image.name || 'photo.png')
+        : dataUrlToFile(image.url, image.name || 'photo.png');
 
   console.debug('Sending image for coloring generation', {
     endpoint: COLORING_API_URL,
@@ -303,9 +406,11 @@ function getFriendlyGenerationError(message) {
     normalized.includes('jpeg') ||
     normalized.includes('png') ||
     normalized.includes('webp') ||
+    normalized.includes('heic') ||
+    normalized.includes('heif') ||
     normalized.includes('unsupported')
   ) {
-    return 'Please upload a JPG, PNG, or WebP image.';
+    return 'Please upload a JPG, PNG, WebP, HEIC, or HEIF image.';
   }
 
   return safeMessage || 'Unable to generate coloring pages right now.';
@@ -316,10 +421,17 @@ function App() {
   const persistedStateRef = useRef(loadPersistedBuilderState());
   const persistedState = persistedStateRef.current;
 
+  useEffect(() => {
+    const maskedKey = maskStripeKeyForLog(STRIPE_PUBLISHABLE_KEY);
+    console.log(
+      `[STRIPE FRONTEND] key present=${maskedKey.present} prefix=${maskedKey.prefix} last4=${maskedKey.last4} validPublishable=${maskedKey.validPublishable}`,
+    );
+  }, []);
+
   const [introStage, setIntroStage] = useState(persistedState?.introStage ?? 'cover');
   const [currentStep, setCurrentStep] = useState(persistedState?.currentStep ?? 'choose');
   const [selectedPageCount, setSelectedPageCount] = useState(
-    persistedState?.selectedPageCount ?? null,
+    persistedState?.selectedPageCount ?? 15,
   );
   const [uploadedImages, setUploadedImages] = useState(
     persistedState?.uploadedImages ?? [],
@@ -327,12 +439,27 @@ function App() {
   const [generatedImages, setGeneratedImages] = useState(
     persistedState?.generatedImages ?? [],
   );
+  const [previewGenerationState, setPreviewGenerationState] = useState(
+    persistedState?.generatedImages?.some(Boolean) ? 'ready' : 'idle',
+  );
+  const [samplePreviewIndex, setSamplePreviewIndex] = useState(
+    Array.isArray(persistedState?.generatedImages)
+      ? persistedState.generatedImages.findIndex(Boolean)
+      : -1,
+  );
   const [isGeneratingPages, setIsGeneratingPages] = useState(false);
   const [generationProgress, setGenerationProgress] = useState('');
   const [generationError, setGenerationError] = useState('');
   const [storageNotice, setStorageNotice] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoResult, setPromoResult] = useState(null); // { discountCents, code, description }
+  const [promoError, setPromoError] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [paymentClientSecret, setPaymentClientSecret] = useState('');
+  const [isPreparingPayment, setIsPreparingPayment] = useState(false);
+  const [paymentSetupError, setPaymentSetupError] = useState('');
   const [orderInfo, setOrderInfo] = useState(persistedState?.orderInfo ?? null);
   const [shippingData, setShippingData] = useState(
     persistedState?.shippingData ?? DEFAULT_SHIPPING_DATA,
@@ -340,11 +467,68 @@ function App() {
   const [sessionId, setSessionId] = useState(
     persistedState?.sessionId || persistedSessionIdRef.current || createSessionId(),
   );
+  const [selectedAddOnIds, setSelectedAddOnIds] = useState(
+    persistedState?.selectedAddOnIds ?? [],
+  );
+  const [addOnQuantities, setAddOnQuantities] = useState(
+    persistedState?.addOnQuantities ?? {},
+  );
+  const [products, setProducts] = useState([]);
+  const [backCoverId, setBackCoverId] = useState(
+    persistedState?.backCoverId ?? 'classic',
+  );
+  const [backCoverDedication, setBackCoverDedication] = useState(
+    persistedState?.backCoverDedication ?? '',
+  );
+  const [selectedProductId, setSelectedProductId] = useState(
+    persistedState?.selectedProductId ?? 'large-book',
+  );
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [productSaveError, setProductSaveError] = useState('');
+  const [productSaveNotice, setProductSaveNotice] = useState('');
+
+  // Auth
+  const [authToken, setAuthToken] = useState(() => window.localStorage.getItem('tuu_auth_token') || '');
+  const [authUser, setAuthUser] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAccountPage, setShowAccountPage] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+
+  // URL-based flows: ?order=ID shows order status, ?reset=TOKEN shows password reset
+  const [urlOrderId] = useState(() => new URLSearchParams(window.location.search).get('order') || '');
+  const [urlResetToken] = useState(() => new URLSearchParams(window.location.search).get('reset') || '');
+  const [showOrderStatus, setShowOrderStatus] = useState(() => Boolean(new URLSearchParams(window.location.search).get('order')));
+  const [showResetPassword, setShowResetPassword] = useState(() => Boolean(new URLSearchParams(window.location.search).get('reset')));
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetConfirm, setResetConfirm] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
 
   const uploadedImagesRef = useRef(uploadedImages);
-  const paymentTimerRef = useRef(null);
+  const uploadedSourceFilesRef = useRef(
+    Array.isArray(persistedState?.uploadedImages)
+      ? Array.from({ length: persistedState.uploadedImages.length }, () => null)
+      : [],
+  );
   const deliveryEstimateRef = useRef(
     persistedState?.deliveryEstimate ?? getDeliveryEstimate(),
+  );
+
+  const selectedProduct = useMemo(
+    () => products.find((p) => p.id === selectedProductId) || products[0] || null,
+    [products, selectedProductId],
+  );
+
+  const cartSummary = useMemo(
+    () =>
+      calculateCartPricing({
+        product: selectedProduct,
+        selectedPageCount,
+        selectedAddOnIds,
+        addOnQuantities,
+      }),
+    [selectedProduct, selectedPageCount, selectedAddOnIds, addOnQuantities],
   );
 
   useEffect(() => {
@@ -352,7 +536,7 @@ function App() {
       count: generatedImages.filter(Boolean).length,
       totalSlots: generatedImages.length,
     });
-  }, []);
+  }, [generatedImages]);
 
   useEffect(() => {
     if (currentStep !== 'preview') {
@@ -370,8 +554,31 @@ function App() {
   }, [uploadedImages]);
 
   useEffect(() => {
+    if (introStage !== 'opening') {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setIntroStage('showcase');
+    }, OPEN_DURATION_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [introStage]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/products`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data?.products) && data.products.length > 0) {
+          setProducts(data.products);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (!selectedPageCount) {
-      if (['upload', 'processing', 'preview', 'checkout'].includes(currentStep)) {
+      if (['upload', 'preview', 'checkout', 'payment'].includes(currentStep)) {
         setCurrentStep('choose');
       }
       return;
@@ -383,6 +590,7 @@ function App() {
       }
 
       if (previousImages.length > selectedPageCount) {
+        uploadedSourceFilesRef.current = uploadedSourceFilesRef.current.slice(0, selectedPageCount);
         previousImages.slice(selectedPageCount).forEach((image) => {
           revokeImageUrl(image);
         });
@@ -413,24 +621,34 @@ function App() {
   }, [selectedPageCount, currentStep]);
 
   useEffect(() => {
-    if (introStage !== 'opening') {
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => {
-      setIntroStage('done');
-    }, OPEN_DURATION_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [introStage]);
-
-  useEffect(() => {
     if (!sessionId) {
       return;
     }
 
     window.localStorage.setItem(SESSION_ID_STORAGE_KEY, sessionId);
   }, [sessionId]);
+
+  useEffect(() => {
+    if (!selectedProduct) {
+      return;
+    }
+
+    const validPageCounts = normalizeAvailablePageCounts(selectedProduct.availablePageCounts);
+    setSelectedPageCount((previous) =>
+      validPageCounts.includes(previous) ? previous : getDefaultPageCount(validPageCounts),
+    );
+
+    const allowedAddOnIds = new Set(
+      (selectedProduct.addOns || []).map((addOn) => addOn.id),
+    );
+
+    setSelectedAddOnIds((previous) => previous.filter((id) => allowedAddOnIds.has(id)));
+    setAddOnQuantities((previous) =>
+      Object.fromEntries(
+        Object.entries(previous).filter(([id]) => allowedAddOnIds.has(id)),
+      ),
+    );
+  }, [selectedProduct]);
 
   useEffect(() => {
     const basePayload = {
@@ -467,6 +685,13 @@ function App() {
           : null,
       ),
       sessionId,
+      selectedAddOnIds,
+      addOnQuantities,
+      selectedProductId: selectedProductId || selectedProduct?.id || '',
+      cartSnapshot: {
+        selectedPageCount: cartSummary.selectedPageCount,
+        finalPriceCents: cartSummary.totalCents,
+      },
     };
 
     try {
@@ -499,6 +724,11 @@ function App() {
     shippingData,
     orderInfo,
     sessionId,
+    selectedAddOnIds,
+    addOnQuantities,
+    selectedProductId,
+    cartSummary.selectedPageCount,
+    cartSummary.totalCents,
     storageNotice,
   ]);
 
@@ -507,20 +737,86 @@ function App() {
       uploadedImagesRef.current.forEach((image) => {
         revokeImageUrl(image);
       });
-
-      if (paymentTimerRef.current) {
-        window.clearTimeout(paymentTimerRef.current);
-      }
     };
   }, []);
 
+  // Restore auth user from token on mount
+  useEffect(() => {
+    if (!authToken) return;
+    fetch(`${API_BASE_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.user) setAuthUser(data.user);
+        else { setAuthToken(''); window.localStorage.removeItem('tuu_auth_token'); }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleAuthSuccess = (token, user) => {
+    setAuthToken(token);
+    setAuthUser(user);
+    window.localStorage.setItem('tuu_auth_token', token);
+    setShowAuthModal(false);
+    // Pre-fill shipping from saved profile if available
+    if (user?.savedShipping) {
+      const s = user.savedShipping;
+      if (s.address || s.email) setShippingData((prev) => ({ ...prev, ...s }));
+    }
+  };
+
+  const handleLogout = () => {
+    setAuthToken('');
+    setAuthUser(null);
+    window.localStorage.removeItem('tuu_auth_token');
+    setShowAccountPage(false);
+  };
+
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (resetPassword !== resetConfirm) { setResetError('Passwords do not match.'); return; }
+    if (resetPassword.length < 6) { setResetError('Password must be at least 6 characters.'); return; }
+    setResetError('');
+    setResetLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: urlResetToken, password: resetPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setResetError(data.error || 'Failed to reset password.'); return; }
+      setResetDone(true);
+      handleAuthSuccess(data.token, data.user);
+      window.history.replaceState({}, '', window.location.pathname);
+    } catch {
+      setResetError('Unable to connect. Please try again.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const goToNextStep = (step) => {
+    if (!VALID_STEPS.has(step)) {
+      return;
+    }
     setCurrentStep(step);
   };
 
   const goToPreviousStep = () => {
-    if (currentStep === 'upload') {
+    if (currentStep === 'choose') {
+      setIntroStage('cover');
+      return;
+    }
+
+    if (currentStep === 'customize') {
       setCurrentStep('choose');
+      return;
+    }
+
+    if (currentStep === 'upload') {
+      setCurrentStep('customize');
       return;
     }
 
@@ -531,49 +827,126 @@ function App() {
 
     if (currentStep === 'checkout') {
       setCurrentStep('preview');
+      return;
+    }
+
+    if (currentStep === 'payment') {
+      setCurrentStep('checkout');
+    }
+  };
+
+  const handleSelectProduct = (productId) => {
+    setSelectedProductId(productId);
+  };
+
+  const handleToggleAddOn = (addOnId) => {
+    setSelectedAddOnIds((previous) =>
+      previous.includes(addOnId)
+        ? previous.filter((id) => id !== addOnId)
+        : [...previous, addOnId],
+    );
+  };
+
+  const handleAddOnQuantityChange = (addOnId, quantity) => {
+    const addOn = selectedProduct?.addOns?.find((a) => a.id === addOnId);
+    if (!addOn) {
+      return;
+    }
+    const clamped = Math.min(addOn.maxQuantity, Math.max(addOn.minQuantity, quantity));
+    setAddOnQuantities((previous) => ({ ...previous, [addOnId]: clamped }));
+  };
+
+  const handleSaveProduct = async (productId, updates) => {
+    setIsSavingProduct(true);
+    setProductSaveError('');
+    setProductSaveNotice('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save product.');
+      }
+      setProducts((previous) =>
+        previous.map((p) => (p.id === productId ? data.product : p)),
+      );
+      setProductSaveNotice('Product saved.');
+    } catch (error) {
+      setProductSaveError(error?.message || 'Failed to save product.');
+    } finally {
+      setIsSavingProduct(false);
+    }
+  };
+
+  const handleCreateProduct = async (newProduct) => {
+    setIsSavingProduct(true);
+    setProductSaveError('');
+    setProductSaveNotice('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProduct),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create product.');
+      }
+      setProducts((previous) => [...previous, data.product]);
+      setSelectedProductId(data.product.id);
+      setProductSaveNotice('Product created.');
+    } catch (error) {
+      setProductSaveError(error?.message || 'Failed to create product.');
+      throw error;
+    } finally {
+      setIsSavingProduct(false);
     }
   };
 
   const updatePageCount = (pageCount) => {
-    setSelectedPageCount(pageCount);
+    const safePageCount = Number.parseInt(String(pageCount), 10) || 0;
+    if (safePageCount <= 0) {
+      return;
+    }
+
+    setSelectedPageCount(safePageCount);
+    setPreviewGenerationState('idle');
     setUploadedImages((previousImages) => {
-      if (previousImages.length === pageCount) {
+      if (previousImages.length === safePageCount) {
         return previousImages;
       }
 
-      if (previousImages.length > pageCount) {
-        previousImages.slice(pageCount).forEach((image) => {
+      if (previousImages.length > safePageCount) {
+        previousImages.slice(safePageCount).forEach((image) => {
           revokeImageUrl(image);
         });
 
-        return previousImages.slice(0, pageCount);
+        return previousImages.slice(0, safePageCount);
       }
 
       return [
         ...previousImages,
-        ...Array.from({ length: pageCount - previousImages.length }, () => null),
+        ...Array.from({ length: safePageCount - previousImages.length }, () => null),
       ];
     });
 
     setGeneratedImages((previousImages) => {
-      if (previousImages.length === pageCount) {
+      if (previousImages.length === safePageCount) {
         return previousImages;
       }
 
-      if (previousImages.length > pageCount) {
-        return previousImages.slice(0, pageCount);
+      if (previousImages.length > safePageCount) {
+        return previousImages.slice(0, safePageCount);
       }
 
       return [
         ...previousImages,
-        ...Array.from({ length: pageCount - previousImages.length }, () => null),
+        ...Array.from({ length: safePageCount - previousImages.length }, () => null),
       ];
     });
-  };
-
-  const handleSelectPageCount = (pageCount) => {
-    updatePageCount(pageCount);
-    goToNextStep('upload');
   };
 
   const handleUpload = (index, file) => {
@@ -582,10 +955,14 @@ function App() {
       return;
     }
 
-    if (!(file instanceof File)) {
-      setGenerationError('Invalid file. Please choose a photo and try again.');
+    if (!isSupportedUploadFile(file)) {
+      setGenerationError('Please upload a JPG, PNG, WebP, HEIC, or HEIF image.');
       return;
     }
+
+    uploadedSourceFilesRef.current[index] = file;
+    setPreviewGenerationState('idle');
+    setSamplePreviewIndex(-1);
 
     const reader = new FileReader();
 
@@ -630,79 +1007,51 @@ function App() {
     reader.readAsDataURL(file);
   };
 
-  const handleCreateBook = async () => {
+  const handleCreateBook = () => {
+    setGenerationError('');
+    setCurrentStep('preview');
+    // Immediately kick off generation of the first uploaded image as the preview
+    handleGenerateSamplePreview();
+  };
+
+  const handleGenerateSamplePreview = async () => {
     if (isGeneratingPages) {
       return;
     }
 
-    const sourceImages = uploadedImages.map((image) =>
-      image && typeof image.url === 'string' && image.url.length > 0 ? image : null,
+    const previewSourceIndex = uploadedImages.findIndex(
+      (image) => image && typeof image.url === 'string' && image.url.length > 0,
     );
-
-    if (!sourceImages.some(Boolean)) {
+    if (previewSourceIndex < 0) {
+      setGenerationError('Please upload at least one photo before requesting a sample preview.');
       return;
     }
 
+    const previewSourceImage = uploadedImages[previewSourceIndex];
     setGenerationError('');
+    setPreviewGenerationState('generating');
     setIsGeneratingPages(true);
-    setCurrentStep('processing');
+    setSamplePreviewIndex(previewSourceIndex);
+    setGenerationProgress('Preparing your sample preview...');
 
     try {
-      const generated = Array.from({ length: sourceImages.length }, () => null);
-      const failedPages = [];
-
-      for (let index = 0; index < sourceImages.length; index += 1) {
-        const sourceImage = sourceImages[index];
-        if (!sourceImage) {
-          continue;
-        }
-
-        setGenerationProgress(`Creating page ${index + 1} of ${sourceImages.length}...`);
-
-        try {
-          const generatedImage = await requestColoringPage(sourceImage, {
-            sessionId,
-            pageIndex: index,
-          });
-          generated[index] = generatedImage;
-          console.debug('Generated coloring page', { page: index + 1, ok: true });
-        } catch (error) {
-          failedPages.push(index + 1);
-          generated[index] = null;
-          console.warn('Coloring page generation failed', { page: index + 1, error });
-        }
-      }
-
-      const successfulPages = generated.filter(Boolean).length;
-      console.debug('Generated images before preview', {
-        requested: sourceImages.filter(Boolean).length,
-        successfulPages,
-        failedPages,
+      const generatedImage = await requestColoringPage(previewSourceImage, {
+        sessionId,
+        pageIndex: previewSourceIndex,
+        sourceFile: uploadedSourceFilesRef.current[previewSourceIndex],
       });
 
-      if (!successfulPages) {
-        throw new Error(
-          'We could not generate coloring pages right now. Please try again in a moment.',
-        );
-      }
-
-      setGeneratedImages(generated);
-      console.debug('Generated images set in state', {
-        successful: generated.filter(Boolean).length,
-        total: generated.length,
+      setGeneratedImages((previousImages) => {
+        const nextImages = [...previousImages];
+        nextImages[previewSourceIndex] = generatedImage;
+        return nextImages;
       });
-      setGenerationProgress('Finishing your preview...');
-      if (failedPages.length) {
-        setGenerationError(
-          `Some pages could not be generated (${failedPages.join(', ')}). Showing uploaded photos for those pages.`,
-        );
-      }
-      setCurrentStep('preview');
+      setPreviewGenerationState('ready');
+      setGenerationProgress('Sample preview ready.');
     } catch (error) {
-      setGenerationError(
-        getFriendlyGenerationError(error?.message),
-      );
-      setCurrentStep('upload');
+      setPreviewGenerationState('idle');
+      setSamplePreviewIndex(-1);
+      setGenerationError(getFriendlyGenerationError(error?.message));
     } finally {
       setIsGeneratingPages(false);
       setGenerationProgress('');
@@ -716,18 +1065,68 @@ function App() {
     }));
   };
 
-  const finalizeOrderForFulfillment = async () => {
+  const effectiveTotalCents = promoResult
+    ? Math.max(0, cartSummary.totalCents - (promoResult.discountCents || 0))
+    : cartSummary.totalCents;
+
+  const buildOrderPayload = ({ paymentIntentId = '', checkoutSessionId = '' } = {}) => {
+    const submittedPageCount = cartSummary.selectedPageCount || selectedPageCount || 0;
+    const submittedIncludedPagesCount = Math.min(5, submittedPageCount);
+
+    return {
+      sessionId,
+      pageCount: submittedPageCount,
+      includedPagesCount: submittedIncludedPagesCount,
+      shipping: shippingData,
+      deliveryEstimate: deliveryEstimateRef.current,
+      selectedProduct: selectedProduct
+        ? {
+            id: selectedProduct.id,
+            name: selectedProduct.name,
+            productType: selectedProduct.productType,
+            isDigital: Boolean(selectedProduct.isDigital),
+            isPhysical: Boolean(selectedProduct.isPhysical),
+            externalLink: selectedProduct.externalLink || '',
+            basePriceCents: selectedProduct.basePriceCents,
+            pricePerPageCents: selectedProduct.pricePerPageCents,
+            availablePageCounts: selectedProduct.availablePageCounts || [],
+          }
+        : null,
+      selectedAddOns: cartSummary.addOns,
+      pricingSummary: {
+        currency: cartSummary.currency,
+        pageCount: submittedPageCount,
+        includedPagesCount: submittedIncludedPagesCount,
+        extraPagesCount: cartSummary.extraPagesCount,
+        basePriceCents: cartSummary.basePriceCents,
+        pricePerPageCents: cartSummary.pricePerPageCents,
+        pagePriceTotalCents: cartSummary.pagePriceTotalCents,
+        extraPagesPriceTotalCents: cartSummary.extraPagesPriceTotalCents,
+        productSubtotalCents: cartSummary.productSubtotalCents,
+        compareAtPriceCents: cartSummary.compareAtPriceCents,
+        addOnsTotalCents: cartSummary.addOnsTotalCents,
+        savingsCents: cartSummary.savingsCents,
+        totalCents: cartSummary.totalCents,
+      },
+      paymentIntentId,
+      checkoutSessionId,
+      promoCode: promoResult?.code || '',
+      discountCents: promoResult?.discountCents || 0,
+      backCoverId,
+      backCoverDedication,
+    };
+  };
+
+  const finalizeOrderForFulfillment = async (paymentIntentId) => {
+    const payload = buildOrderPayload({ paymentIntentId });
+
+    const orderHeaders = { 'Content-Type': 'application/json' };
+    if (authToken) orderHeaders['Authorization'] = `Bearer ${authToken}`;
+
     const response = await fetch(COMPLETE_ORDER_API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        sessionId,
-        pageCount: selectedPageCount,
-        shipping: shippingData,
-        deliveryEstimate: deliveryEstimateRef.current,
-      }),
+      headers: orderHeaders,
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -738,58 +1137,192 @@ function App() {
     return response.json();
   };
 
-  const handleProceedToPayment = (event) => {
-    event.preventDefault();
+  useEffect(() => {
+    if (currentStep !== 'payment') {
+      return;
+    }
 
+    if (!selectedProduct) {
+      return;
+    }
+
+    if (!hasValidPublishableStripeKey) {
+      setPaymentClientSecret('');
+      setPaymentSetupError(
+        'Add a valid VITE_STRIPE_PUBLISHABLE_KEY to the frontend environment to load payment.',
+      );
+      return;
+    }
+
+    let isCancelled = false;
+
+    const preparePaymentIntent = async () => {
+      try {
+        setPaymentSetupError('');
+        setIsPreparingPayment(true);
+        setPaymentClientSecret('');
+        const response = await fetch(CREATE_PAYMENT_INTENT_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(buildOrderPayload()),
+        });
+        const responseBody = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(responseBody.error || 'Unable to prepare secure payment.');
+        }
+
+        if (isCancelled) {
+          return;
+        }
+
+        if (!responseBody.clientSecret || typeof responseBody.clientSecret !== 'string') {
+          throw new Error('Stripe did not return a client secret.');
+        }
+
+        setPaymentClientSecret(responseBody.clientSecret);
+      } catch (error) {
+        if (!isCancelled) {
+          setPaymentSetupError(error?.message || 'Unable to prepare secure payment.');
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsPreparingPayment(false);
+        }
+      }
+    };
+
+    preparePaymentIntent();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    currentStep,
+    selectedProduct?.id,
+    sessionId,
+    selectedPageCount,
+    cartSummary.selectedPageCount,
+    cartSummary.totalCents,
+    cartSummary.addOnsTotalCents,
+  ]);
+
+  const handleValidatePromo = async (code) => {
+    if (!code.trim()) return;
+    setPromoError('');
+    setPromoLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/promo/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.trim(), totalCents: cartSummary.totalCents }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setPromoError(data.error || 'Invalid code.'); setPromoResult(null); return; }
+      setPromoResult(data);
+    } catch {
+      setPromoError('Unable to validate code.');
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleContinueToPayment = () => {
+    setPaymentError('');
+    setPaymentSetupError('');
+    setCurrentStep('payment');
+  };
+
+  const handleCompletePaidOrder = async (paymentIntentId) => {
     if (isProcessingPayment) {
       return;
     }
 
     setPaymentError('');
+    setGenerationError('');
     setIsProcessingPayment(true);
 
-    paymentTimerRef.current = window.setTimeout(async () => {
-      try {
-        const orderResult = await finalizeOrderForFulfillment();
-        setOrderInfo({
-          number: orderResult?.orderId || `OUY-${Math.floor(100000 + Math.random() * 900000)}`,
-          deliveryEstimate:
-            orderResult?.deliveryEstimate || deliveryEstimateRef.current,
-          createdAt: orderResult?.createdAt || new Date().toISOString(),
-          status: orderResult?.status || 'new',
+    try {
+      // Generate all pages that haven't been generated yet.
+      // The preview step generated only 1 as a sample; now we generate the rest.
+      const snapshotUploaded = uploadedImagesRef.current;
+      const snapshotGenerated = [...generatedImages];
+      const total = snapshotUploaded.length;
+
+      for (let i = 0; i < total; i += 1) {
+        const uploaded = snapshotUploaded[i];
+        const alreadyGenerated = snapshotGenerated[i];
+
+        if (!uploaded || alreadyGenerated) {
+          continue;
+        }
+
+        setGenerationProgress(`Creating your coloring pages… (${i + 1} of ${total})`);
+
+        // eslint-disable-next-line no-await-in-loop
+        const generatedImage = await requestColoringPage(uploaded, {
+          sessionId,
+          pageIndex: i,
+          sourceFile: uploadedSourceFilesRef.current[i],
         });
-        setCurrentStep('success');
-      } catch (error) {
-        setPaymentError(error?.message || 'Unable to save this order right now.');
-      } finally {
-        setIsProcessingPayment(false);
-        paymentTimerRef.current = null;
+
+        setGeneratedImages((prev) => {
+          const next = [...prev];
+          next[i] = generatedImage;
+          return next;
+        });
+        snapshotGenerated[i] = generatedImage;
       }
-    }, PAYMENT_DURATION_MS);
+
+      setGenerationProgress('');
+
+      const orderResult = await finalizeOrderForFulfillment(paymentIntentId);
+      setOrderInfo({
+        number: orderResult?.orderId || `TUU-${Math.floor(100000 + Math.random() * 900000)}`,
+        deliveryEstimate: orderResult?.deliveryEstimate || deliveryEstimateRef.current,
+        createdAt: orderResult?.createdAt || new Date().toISOString(),
+        status: orderResult?.status || 'new',
+      });
+      setCurrentStep('success');
+    } catch (error) {
+      setPaymentError(error?.message || 'Unable to complete your order after payment.');
+      throw error;
+    } finally {
+      setIsProcessingPayment(false);
+      setGenerationProgress('');
+    }
   };
 
   const handleStartOver = () => {
     uploadedImagesRef.current.forEach((image) => {
       revokeImageUrl(image);
     });
-
-    if (paymentTimerRef.current) {
-      window.clearTimeout(paymentTimerRef.current);
-      paymentTimerRef.current = null;
-    }
+    uploadedSourceFilesRef.current = [];
 
     setIntroStage('cover');
     setCurrentStep('choose');
+    setBackCoverId('classic');
+    setBackCoverDedication('');
     setSelectedPageCount(null);
     setUploadedImages([]);
     setGeneratedImages([]);
+    setPreviewGenerationState('idle');
+    setSamplePreviewIndex(-1);
     setIsGeneratingPages(false);
     setGenerationProgress('');
     setGenerationError('');
     setPaymentError('');
+    setPaymentClientSecret('');
+    setPaymentSetupError('');
+    setIsPreparingPayment(false);
     setIsProcessingPayment(false);
     setOrderInfo(null);
     setShippingData(DEFAULT_SHIPPING_DATA);
+    setSelectedAddOnIds([]);
+    setAddOnQuantities({});
+    setSelectedProductId(null);
     setSessionId(createSessionId());
     deliveryEstimateRef.current = getDeliveryEstimate();
     clearBuilderStorage();
@@ -800,16 +1333,53 @@ function App() {
     setCurrentStep('choose');
   };
 
+  const handleNavigateStep = (stepKey) => {
+    if (stepKey === 'cover') { setIntroStage('cover'); return; }
+    if (stepKey === 'showcase') { setIntroStage('showcase'); return; }
+    setIntroStage('done');
+    if (stepKey === 'choose') setCurrentStep('choose');
+    else if (stepKey === 'customize') setCurrentStep('customize');
+    else if (stepKey === 'upload') setCurrentStep('upload');
+    else if (stepKey === 'preview') setCurrentStep('preview');
+    else if (stepKey === 'finalize') setCurrentStep('checkout');
+  };
+
   const uploadedCount = uploadedImages.filter(Boolean).length;
+  const isPreviewReady =
+    previewGenerationState === 'ready' &&
+    samplePreviewIndex >= 0 &&
+    Boolean(generatedImages[samplePreviewIndex]);
+  const checkoutBackLabel = isPreviewReady ? 'Back to Preview' : 'Back to Uploads';
+
+  const handleReviewPreview = () => {
+    if (!isPreviewReady) {
+      return;
+    }
+
+    setCurrentStep('preview');
+  };
+
+  const handleCheckoutBack = () => {
+    if (isPreviewReady) {
+      setCurrentStep('preview');
+      return;
+    }
+
+    setCurrentStep('upload');
+  };
+
+  const handlePaymentBack = () => {
+    setCurrentStep('checkout');
+  };
 
   const trackerStep =
-    introStage === 'cover' || introStage === 'opening'
+    introStage === 'showcase'
+      ? 'showcase'
+      : introStage === 'cover' || introStage === 'opening'
       ? 'cover'
-      : ['checkout', 'success'].includes(currentStep)
+      : ['checkout', 'payment', 'success'].includes(currentStep)
         ? 'finalize'
-        : currentStep === 'processing'
-          ? 'preview'
-          : currentStep;
+        : currentStep;
 
   let content;
 
@@ -820,11 +1390,35 @@ function App() {
         onStart={() => setIntroStage('opening')}
       />
     );
+  } else if (introStage === 'showcase') {
+    content = (
+      <ProductShowcase onContinue={() => setIntroStage('done')} />
+    );
   } else if (currentStep === 'choose') {
     content = (
       <ChooseBook
+        products={products}
+        selectedProductId={selectedProductId || selectedProduct?.id || ''}
         selectedPageCount={selectedPageCount}
-        onSelect={handleSelectPageCount}
+        selectedAddOnIds={selectedAddOnIds}
+        addOnQuantities={addOnQuantities}
+        cartSummary={cartSummary}
+        onSelectProduct={handleSelectProduct}
+        onSelectPageCount={updatePageCount}
+        onContinueToUploads={() => goToNextStep('customize')}
+        onToggleAddOn={handleToggleAddOn}
+        onAddOnQuantityChange={handleAddOnQuantityChange}
+      />
+    );
+  } else if (currentStep === 'customize') {
+    content = (
+      <CustomizeBack
+        backCoverId={backCoverId}
+        dedication={backCoverDedication}
+        onBackCoverChange={setBackCoverId}
+        onDedicationChange={setBackCoverDedication}
+        onBack={() => setCurrentStep('choose')}
+        onContinue={() => goToNextStep('upload')}
       />
     );
   } else if (currentStep === 'upload' && selectedPageCount) {
@@ -832,42 +1426,68 @@ function App() {
       <UploadPhotos
         pageCount={selectedPageCount}
         uploads={uploadedImages}
+        selectedProduct={selectedProduct}
+        cartSummary={cartSummary}
         onUpload={handleUpload}
         onBack={goToPreviousStep}
         onCreateBook={handleCreateBook}
         generationError={generationError || storageNotice}
       />
     );
-  } else if (currentStep === 'processing') {
-    content = <ProcessingStep progressText={generationProgress} />;
   } else if (currentStep === 'preview') {
     content = (
       <PreviewBook
         pageCount={selectedPageCount}
         uploads={uploadedImages}
         generatedImages={generatedImages}
+        samplePreviewIndex={samplePreviewIndex}
+        isGenerating={isGeneratingPages}
+        generationProgress={generationProgress}
+        generationError={generationError}
         onBackToUploads={() => setCurrentStep('upload')}
         onFinishOrder={() => goToNextStep('checkout')}
       />
     );
-  } else if (currentStep === 'checkout') {
+  } else if (currentStep === 'checkout' || currentStep === 'payment') {
     content = (
       <CheckoutPage
         pageCount={selectedPageCount}
         uploadedCount={uploadedCount}
         deliveryEstimate={deliveryEstimateRef.current}
         shippingData={shippingData}
+        selectedProduct={selectedProduct}
+        cartSummary={cartSummary}
         onFieldChange={handleShippingFieldChange}
-        onBack={goToPreviousStep}
-        onProceed={handleProceedToPayment}
+        onBack={currentStep === 'payment' ? handlePaymentBack : handleCheckoutBack}
+        onContinueToPayment={handleContinueToPayment}
+        onCompletePaidOrder={handleCompletePaidOrder}
+        isPaymentStep={currentStep === 'payment'}
         isProcessingPayment={isProcessingPayment}
         paymentError={paymentError}
+        paymentClientSecret={paymentClientSecret}
+        isPreparingPayment={isPreparingPayment}
+        paymentSetupError={paymentSetupError}
+        stripePromise={stripePromise}
+        isGeneratingPreview={isGeneratingPages}
+        previewReady={isPreviewReady}
+        previewStatusText={generationProgress}
+        previewError={generationError}
+        onReviewPreview={handleReviewPreview}
+        onRequestPreview={handleGenerateSamplePreview}
+        backLabel={currentStep === 'payment' ? 'Back to Checkout' : checkoutBackLabel}
+        promoCode={promoCode}
+        promoResult={promoResult}
+        promoError={promoError}
+        promoLoading={promoLoading}
+        onPromoCodeChange={(v) => { setPromoCode(v); setPromoResult(null); setPromoError(''); }}
+        onPromoApply={handleValidatePromo}
+        onPromoRemove={() => { setPromoCode(''); setPromoResult(null); setPromoError(''); }}
       />
     );
   } else {
     content = (
       <OrderSuccess
-        orderNumber={orderInfo?.number ?? 'OUY-000000'}
+        orderNumber={orderInfo?.number ?? 'TUU-000000'}
         deliveryEstimate={orderInfo?.deliveryEstimate ?? deliveryEstimateRef.current}
         supportEmail={SUPPORT_EMAIL}
         onStartOver={handleStartOver}
@@ -878,31 +1498,134 @@ function App() {
 
   return (
     <main className="app-shell">
-      <div className="builder-flow">
-        <header className="app-brand-header" aria-label="Once Upon You">
-          <BrandLogo className="app-brand-logo" />
-          <button
-            type="button"
-            className="reset-book-button"
-            onClick={handleStartOver}
-          >
-            Reset Book
-          </button>
-        </header>
-        <StepTracker steps={TRACKER_STEPS} currentStep={trackerStep} />
-        {content}
-        {introStage === 'done' ? (
-          <section className="about-once-upon-you" aria-labelledby="about-once-upon-you-title">
-            <h3 id="about-once-upon-you-title">About Once Upon You</h3>
-            <p>
-              Once Upon You transforms your favorite photos into personalized coloring books. Each
-              book turns your memories into clean, hand-drawn style illustrations that feel like
-              pages from your own story. From fashion moments to everyday memories, your photos
-              become something you can color, share, and keep forever.
-            </p>
-          </section>
-        ) : null}
+      <div className="configurator-shell">
+        <aside className="configurator-sidebar">
+          <StepTracker steps={TRACKER_STEPS} currentStep={trackerStep} onNavigate={handleNavigateStep} />
+        </aside>
+
+        <div className="configurator-main">
+          <header className="configurator-topbar">
+            <div className="configurator-topbar-brand" aria-label="Twice Upon Us">
+              <BrandLogo className="builder-header-logo" />
+            </div>
+            <div className="configurator-topbar-nav">
+              <TopProgressBar steps={TRACKER_STEPS} currentStep={trackerStep} onNavigate={handleNavigateStep} />
+            </div>
+            <div className="configurator-topbar-actions">
+              {introStage !== 'cover' && introStage !== 'opening' ? (
+                <button
+                  type="button"
+                  className="reset-book-button"
+                  onClick={handleStartOver}
+                  title="Reset Book"
+                >
+                  <span className="reset-book-label">Reset</span>
+                </button>
+              ) : null}
+              {authUser ? (
+                <button
+                  type="button"
+                  className="auth-header-btn auth-header-btn--user"
+                  onClick={() => setShowAccountPage(true)}
+                >
+                  <span className="auth-header-avatar">{authUser.firstName?.charAt(0) || authUser.email?.charAt(0) || 'U'}</span>
+                  <span className="auth-header-name">{authUser.firstName || 'Account'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="auth-header-btn"
+                  onClick={() => setShowAuthModal(true)}
+                >
+                  Log In
+                </button>
+              )}
+            </div>
+          </header>
+          <div className="configurator-main-content">
+            <div className="builder-flow">{content}</div>
+            <div className="page-watermark-wrap">
+              <img src="/src/assets/logo-title.png" alt="Twice Upon Us" className="page-watermark" />
+              <p className="page-watermark-desc">Personalized coloring books made from your photos</p>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" className="support-widget" onClick={() => setShowContactModal(true)}>
+          <span className="support-avatar" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </span>
+          <span className="support-copy">
+            <strong>Need Help?</strong>
+            <span>Send us a message.</span>
+          </span>
+        </button>
       </div>
+
+      {showOrderStatus && (
+        <div className="auth-modal-backdrop" onClick={() => { setShowOrderStatus(false); window.history.replaceState({}, '', window.location.pathname); }}>
+          <div style={{ width: '100%', maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
+            <OrderStatusPage
+              orderId={urlOrderId}
+              apiBase={API_BASE_URL}
+              onBack={() => { setShowOrderStatus(false); window.history.replaceState({}, '', window.location.pathname); }}
+            />
+          </div>
+        </div>
+      )}
+
+      {showResetPassword && !resetDone && (
+        <div className="auth-modal-backdrop">
+          <div className="auth-modal">
+            <div className="auth-modal-header">
+              <h2 className="auth-modal-title">Set a new password</h2>
+              <p className="auth-modal-sub">Choose a strong password for your account.</p>
+            </div>
+            <form className="auth-form" onSubmit={handleResetPasswordSubmit}>
+              <div className="auth-field">
+                <label className="auth-label">New password</label>
+                <input className="auth-input" type="password" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder="At least 6 characters" required />
+              </div>
+              <div className="auth-field">
+                <label className="auth-label">Confirm password</label>
+                <input className="auth-input" type="password" value={resetConfirm} onChange={(e) => setResetConfirm(e.target.value)} placeholder="Repeat your password" required />
+              </div>
+              {resetError && <p className="auth-error">{resetError}</p>}
+              <button type="submit" className="auth-submit" disabled={resetLoading}>
+                {resetLoading ? 'Saving…' : 'Set New Password'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showAuthModal && (
+        <AuthModal
+          apiBase={API_BASE_URL}
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
+
+      {showAccountPage && authUser && (
+        <AccountPage
+          user={authUser}
+          token={authToken}
+          apiBase={API_BASE_URL}
+          onClose={() => setShowAccountPage(false)}
+          onLogout={handleLogout}
+          onShippingSaved={(savedShipping) => {
+            setAuthUser((prev) => ({ ...prev, savedShipping }));
+            if (savedShipping?.address || savedShipping?.email) {
+              setShippingData((prev) => ({ ...prev, ...savedShipping }));
+            }
+          }}
+        />
+      )}
+
+      {showContactModal && (
+        <ContactModal onClose={() => setShowContactModal(false)} />
+      )}
     </main>
   );
 }
