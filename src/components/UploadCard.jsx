@@ -110,7 +110,7 @@ function UploadCard({ pageNumber, image, onUpload }) {
         ) : (
           <div className="upload-placeholder" aria-hidden="true">
             <img
-              src="/src/assets/logo-stacked.png"
+              src="/images/logo-stacked.png"
               alt=""
               className="upload-placeholder-logo"
             />

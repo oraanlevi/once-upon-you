@@ -15,7 +15,7 @@ function BookCover({ isOpening, onStart }) {
           <div className="cover-content">
             <div className="cover-group">
               <img
-                src="/src/assets/logo-title-cropped.png"
+                src="/images/logo-title-cropped.png"
                 alt="Twice Upon Us"
                 className="cover-logo-title"
               />

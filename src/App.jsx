@@ -14,6 +14,7 @@ import AuthModal from './components/AuthModal';
 import AccountPage from './components/AccountPage';
 import OrderStatusPage from './components/OrderStatusPage';
 import ContactModal from './components/ContactModal';
+import CorporatePortal from './components/corporate/CorporatePortal';
 import CustomizeBack from './components/CustomizeBack';
 import { calculateCartPricing, getDefaultPageCount, normalizeAvailablePageCounts } from './utils/pricing';
 import './App.css';
@@ -493,6 +494,9 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAccountPage, setShowAccountPage] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showCorporatePortal, setShowCorporatePortal] = useState(
+    () => Boolean(new URLSearchParams(window.location.search).get('groups'))
+  );
 
   // URL-based flows: ?order=ID shows order status, ?reset=TOKEN shows password reset
   const [urlOrderId] = useState(() => new URLSearchParams(window.location.search).get('order') || '');
@@ -1071,7 +1075,7 @@ function App() {
 
   const buildOrderPayload = ({ paymentIntentId = '', checkoutSessionId = '' } = {}) => {
     const submittedPageCount = cartSummary.selectedPageCount || selectedPageCount || 0;
-    const submittedIncludedPagesCount = Math.min(5, submittedPageCount);
+    const submittedIncludedPagesCount = Math.min(8, submittedPageCount);
 
     return {
       sessionId,
@@ -1545,7 +1549,7 @@ function App() {
           <div className="configurator-main-content">
             <div className="builder-flow">{content}</div>
             <div className="page-watermark-wrap">
-              <img src="/src/assets/logo-title.png" alt="Twice Upon Us" className="page-watermark" />
+              <img src="/images/logo-title.png" alt="Twice Upon Us" className="page-watermark" />
               <p className="page-watermark-desc">Personalized coloring books made from your photos</p>
             </div>
           </div>
@@ -1626,6 +1630,14 @@ function App() {
       {showContactModal && (
         <ContactModal onClose={() => setShowContactModal(false)} />
       )}
+
+      {showCorporatePortal && (
+        <CorporatePortal
+          onClose={() => setShowCorporatePortal(false)}
+          apiBase={API_BASE_URL}
+        />
+      )}
+
     </main>
   );
 }

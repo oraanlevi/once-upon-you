@@ -2348,6 +2348,86 @@ app.post('/api/contact', express.json(), async (req, res) => {
   }
 });
 
+// ─── Corporate quote ─────────────────────────────────────────────────────────
+
+app.post('/api/corporate-quote', upload.fields([{ name: 'photos', maxCount: 10 }, { name: 'logo', maxCount: 1 }]), async (req, res) => {
+  const { format, pageCount, quantity, name, company, email, phone } = req.body || {};
+
+  if (!format || !pageCount || !quantity || !name || !company || !email || !phone) {
+    res.status(400).json({ error: 'All fields are required.' });
+    return;
+  }
+  if (typeof email !== 'string' || !email.includes('@')) {
+    res.status(400).json({ error: 'Invalid email address.' });
+    return;
+  }
+
+  const safeName = String(name).slice(0, 100);
+  const safeCompany = String(company).slice(0, 100);
+  const safeEmail = String(email).slice(0, 254);
+  const safePhone = String(phone).slice(0, 30);
+  const safeFormat = format === 'large-book' ? 'Large Book' : 'Pocket Book';
+  const safePageCount = String(pageCount);
+  const safeQuantity = String(quantity);
+  const photoCount = (req.files?.photos || []).length;
+  const hasLogo = (req.files?.logo || []).length > 0;
+
+  const qty = parseInt(safeQuantity, 10);
+  const pricePerBook = qty >= 100 ? 7 : 8;
+  const estimatedTotal = isNaN(qty) ? 'Contact us' : `$${(qty * pricePerBook).toLocaleString()}`;
+
+  const adminHtml = `
+    <div style="font-family:sans-serif;max-width:560px;color:#1e0e28">
+      <h2 style="color:#7446a0">New Corporate Quote Request</h2>
+      <table style="width:100%;font-size:14px;border-collapse:collapse;margin-bottom:16px">
+        <tr><td style="padding:6px 0;color:#888;width:120px">Contact</td><td><strong>${safeName}</strong> — ${safeCompany}</td></tr>
+        <tr><td style="padding:6px 0;color:#888">Email</td><td>${safeEmail}</td></tr>
+        <tr><td style="padding:6px 0;color:#888">Phone</td><td>${safePhone}</td></tr>
+        <tr><td style="padding:6px 0;color:#888">Format</td><td>${safeFormat}</td></tr>
+        <tr><td style="padding:6px 0;color:#888">Page Count</td><td>${safePageCount} pages</td></tr>
+        <tr><td style="padding:6px 0;color:#888">Quantity</td><td>${safeQuantity} books</td></tr>
+        <tr><td style="padding:6px 0;color:#888">Price/Book</td><td>$${pricePerBook}</td></tr>
+        <tr><td style="padding:6px 0;color:#888">Est. Total</td><td><strong>${estimatedTotal}</strong></td></tr>
+        <tr><td style="padding:6px 0;color:#888">Photos</td><td>${photoCount} inspiration photo(s) uploaded</td></tr>
+        <tr><td style="padding:6px 0;color:#888">Logo</td><td>${hasLogo ? 'Yes, logo uploaded' : 'No logo uploaded'}</td></tr>
+      </table>
+      <p style="color:#888;font-size:12px">Reply to this email to contact the client directly.</p>
+    </div>
+  `;
+
+  const clientHtml = `
+    <div style="font-family:sans-serif;max-width:520px;color:#1e0e28">
+      <h2 style="color:#7446a0">We received your quote request!</h2>
+      <p style="font-size:15px;line-height:1.6">Hi ${safeName}, thanks for reaching out to Twice Upon Us. We've received your corporate order request for <strong>${safeQuantity} ${safeFormat}s</strong> and will be in touch within 1–2 business days to confirm your quote.</p>
+      <table style="width:100%;font-size:14px;border-collapse:collapse;margin:20px 0;background:#f5f0ff;border-radius:10px;padding:16px">
+        <tr><td style="padding:6px 12px;color:#888;width:120px">Format</td><td>${safeFormat}</td></tr>
+        <tr><td style="padding:6px 12px;color:#888">Pages</td><td>${safePageCount} pages</td></tr>
+        <tr><td style="padding:6px 12px;color:#888">Quantity</td><td>${safeQuantity} books</td></tr>
+        <tr><td style="padding:6px 12px;color:#888">Est. Total</td><td><strong>${estimatedTotal}</strong></td></tr>
+      </table>
+      <p style="font-size:14px;color:#61506e">Questions? Reply to this email or reach us at twiceuponus@gmail.com</p>
+      <p style="font-size:13px;color:#aaa;margin-top:24px">— The Twice Upon Us Team</p>
+    </div>
+  `;
+
+  try {
+    await sendEmail({
+      to: ADMIN_EMAIL || 'twiceuponus@gmail.com',
+      replyTo: safeEmail,
+      subject: `[Corporate Quote] ${safeCompany} — ${safeQuantity} books`,
+      html: adminHtml,
+    });
+    await sendEmail({
+      to: safeEmail,
+      subject: 'Your Twice Upon Us corporate quote request',
+      html: clientHtml,
+    });
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Failed to send quote. Please try again.' });
+  }
+});
+
 // Validate promo code
 app.post('/api/promo/validate', express.json(), async (req, res) => {
   const { code, totalCents } = req.body || {};
