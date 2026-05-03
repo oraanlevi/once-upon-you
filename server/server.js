@@ -2564,6 +2564,9 @@ app.get('/api/admin/orders/:orderId/image/:type/:filename', requireAdmin, async 
   const imagePath = path.join(ORDERS_ROOT, orderId, type, safeFilename);
   try {
     await fs.access(imagePath);
+    if (req.query.dl === '1') {
+      res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
+    }
     res.sendFile(imagePath);
   } catch {
     res.status(404).json({ error: 'Image not found.' });
