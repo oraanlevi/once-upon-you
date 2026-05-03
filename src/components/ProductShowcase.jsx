@@ -8,8 +8,8 @@ function ProductShowcase({ onContinue }) {
           <h2 className="showcase-page-title">Your photos<br />become art.</h2>
           <p className="showcase-page-sub">
             Every photo you upload gets individually transformed into a stunning
-            coloring page. No templates, no stock art — just your
-            memories illustrated. And the cover? <strong>That's on us 😉</strong> — we
+            coloring page. No templates, no stock art. Just your
+            memories illustrated. And the cover? <strong>That's on us 😉</strong> We
             design it entirely from the images you provide.
           </p>
           <button type="button" className="showcase-page-cta" onClick={onContinue}>

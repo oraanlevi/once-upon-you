@@ -21,15 +21,14 @@ function UploadPhotos({
           <p className="builder-eyebrow">Step 2 of 3</p>
           <h2 id="upload-step-title">Upload your photos</h2>
           <p className="builder-lede upload-intro">
-            Each photo you upload becomes its own coloring page — hand-illustrated
-            and brought to life. The cover is designed for you, using the moments you share.
+            Each photo becomes its own coloring page.
           </p>
           <div className="upload-guidance">
             <div className="upload-guidance-title">📸 Tips for the best coloring pages</div>
             <div className="upload-guidance-grid">
               <div className="upload-guidance-item upload-guidance-item--good">
                 <span className="guidance-icon">✓</span>
-                <span>Clear, well-lit face (portrait works great)</span>
+                <span>Clear, well-lit photo — faces, scenes, places, anything</span>
               </div>
               <div className="upload-guidance-item upload-guidance-item--good">
                 <span className="guidance-icon">✓</span>
@@ -45,11 +44,11 @@ function UploadPhotos({
               </div>
               <div className="upload-guidance-item upload-guidance-item--good">
                 <span className="guidance-icon">✓</span>
-                <span>Crowded group shots (one subject per page)</span>
+                <span>Groups, events, candid moments — all welcome</span>
               </div>
               <div className="upload-guidance-item upload-guidance-item--good">
                 <span className="guidance-icon">✓</span>
-                <span>Sunglasses, hats covering the face</span>
+                <span>Sunglasses, hats, full scenes — it's about the vibe</span>
               </div>
             </div>
           </div>

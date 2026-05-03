@@ -484,6 +484,12 @@ function App() {
   const [backCoverDedication, setBackCoverDedication] = useState(
     persistedState?.backCoverDedication ?? '',
   );
+  const [dedicationPageText, setDedicationPageText] = useState(
+    persistedState?.dedicationPageText ?? '',
+  );
+  const [coverNotes, setCoverNotes] = useState(
+    persistedState?.coverNotes ?? '',
+  );
   const [selectedProductId, setSelectedProductId] = useState(
     persistedState?.selectedProductId ?? 'large-book',
   );
@@ -1101,8 +1107,7 @@ function App() {
   const handleCreateBook = () => {
     setGenerationError('');
     setCurrentStep('preview');
-    // Immediately kick off generation of the first uploaded image as the preview
-    handleGenerateSamplePreview();
+    // Generation is handled by the useEffect that fires when currentStep becomes 'preview'
   };
 
   const handleGenerateSamplePreview = async () => {
@@ -1205,6 +1210,8 @@ function App() {
       discountCents: promoResult?.discountCents || 0,
       backCoverId,
       backCoverDedication,
+      dedicationPageText,
+      coverNotes,
     };
   };
 
@@ -1345,8 +1352,17 @@ function App() {
     setIsProcessingPayment(true);
 
     try {
-      // Generate all pages that haven't been generated yet.
-      // The preview step generated only 1 as a sample; now we generate the rest.
+      // 1. Show success immediately — don't make customer wait.
+      setOrderInfo({
+        number: `TUU-${Math.floor(100000 + Math.random() * 900000)}`,
+        deliveryEstimate: deliveryEstimateRef.current,
+        createdAt: new Date().toISOString(),
+        status: 'new',
+      });
+      setCurrentStep('success');
+      setIsProcessingPayment(false);
+
+      // 2. Silently generate all remaining pages in the background.
       const snapshotUploaded = uploadedImagesRef.current;
       const snapshotGenerated = [...generatedImages];
       const total = snapshotUploaded.length;
@@ -1354,44 +1370,33 @@ function App() {
       for (let i = 0; i < total; i += 1) {
         const uploaded = snapshotUploaded[i];
         const alreadyGenerated = snapshotGenerated[i];
-
-        if (!uploaded || alreadyGenerated) {
-          continue;
+        if (!uploaded || alreadyGenerated) continue;
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await requestColoringPage(uploaded, {
+            sessionId,
+            pageIndex: i,
+            sourceFile: uploadedSourceFilesRef.current[i],
+          });
+        } catch {
+          // silently skip failed pages
         }
-
-        setGenerationProgress(`Creating your coloring pages… (${i + 1} of ${total})`);
-
-        // eslint-disable-next-line no-await-in-loop
-        const generatedImage = await requestColoringPage(uploaded, {
-          sessionId,
-          pageIndex: i,
-          sourceFile: uploadedSourceFilesRef.current[i],
-        });
-
-        setGeneratedImages((prev) => {
-          const next = [...prev];
-          next[i] = generatedImage;
-          return next;
-        });
-        snapshotGenerated[i] = generatedImage;
       }
 
-      setGenerationProgress('');
-
+      // 3. Finalize order — all generated files are now on the server.
       const orderResult = await finalizeOrderForFulfillment(paymentIntentId);
-      setOrderInfo({
-        number: orderResult?.orderId || `TUU-${Math.floor(100000 + Math.random() * 900000)}`,
-        deliveryEstimate: orderResult?.deliveryEstimate || deliveryEstimateRef.current,
-        createdAt: orderResult?.createdAt || new Date().toISOString(),
-        status: orderResult?.status || 'new',
-      });
-      setCurrentStep('success');
+      if (orderResult?.orderId) {
+        setOrderInfo((prev) => ({
+          ...prev,
+          number: orderResult.orderId,
+          deliveryEstimate: orderResult.deliveryEstimate || prev.deliveryEstimate,
+        }));
+      }
     } catch (error) {
       setPaymentError(error?.message || 'Unable to complete your order after payment.');
       throw error;
     } finally {
       setIsProcessingPayment(false);
-      setGenerationProgress('');
     }
   };
 
@@ -1405,6 +1410,8 @@ function App() {
     setCurrentStep('choose');
     setBackCoverId('classic');
     setBackCoverDedication('');
+    setDedicationPageText('');
+    setCoverNotes('');
     setSelectedPageCount(null);
     setUploadedImages([]);
     setGeneratedImages([]);
@@ -1503,11 +1510,13 @@ function App() {
         selectedAddOnIds={selectedAddOnIds}
         addOnQuantities={addOnQuantities}
         cartSummary={cartSummary}
+        dedicationPageText={dedicationPageText}
         onSelectProduct={handleSelectProduct}
         onSelectPageCount={updatePageCount}
         onContinueToUploads={() => goToNextStep('customize')}
         onToggleAddOn={handleToggleAddOn}
         onAddOnQuantityChange={handleAddOnQuantityChange}
+        onDedicationPageTextChange={setDedicationPageText}
       />
     );
   } else if (currentStep === 'customize') {
@@ -1515,8 +1524,10 @@ function App() {
       <CustomizeBack
         backCoverId={backCoverId}
         dedication={backCoverDedication}
+        coverNotes={coverNotes}
         onBackCoverChange={setBackCoverId}
         onDedicationChange={setBackCoverDedication}
+        onCoverNotesChange={setCoverNotes}
         onBack={() => setCurrentStep('choose')}
         onContinue={() => goToNextStep('upload')}
       />
@@ -1545,7 +1556,7 @@ function App() {
         generationProgress={generationProgress}
         generationError={generationError}
         onBackToUploads={() => setCurrentStep('upload')}
-        onFinishOrder={() => goToNextStep('checkout')}
+        onFinishOrder={() => { setGenerationError(''); goToNextStep('checkout'); }}
       />
     );
   } else if (currentStep === 'checkout' || currentStep === 'payment') {

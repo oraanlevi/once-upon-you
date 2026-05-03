@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const API = 'http://localhost:5001';
+const API = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001').trim().replace(/\/+$/, '');
 
 export default function ContactModal({ onClose }) {
   const [name, setName] = useState('');
@@ -96,7 +96,7 @@ export default function ContactModal({ onClose }) {
                   placeholder="Tell us how we can help…"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  rows={5}
+                  rows={3}
                   required
                 />
               </div>

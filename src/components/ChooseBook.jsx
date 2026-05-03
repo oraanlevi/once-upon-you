@@ -34,7 +34,7 @@ const FEATURED_ADDON_IDS = ['digital-download', 'gift-wrap', 'custom-cover-photo
 
 const ADDON_GROUPS = [
   { label: '🎁 Make it a Gift', ids: ['gift-wrap', 'greeting-card', 'dedication-page'] },
-  { label: '✨ Personalize It', ids: ['custom-name', 'custom-cover-photo', 'protective-sleeve'] },
+  { label: '✨ Personalize It', ids: ['custom-name', 'custom-cover-photo'] },
   { label: '⚡ Get It Faster', ids: ['rush-order', 'additional-copy'] },
 ];
 
@@ -53,11 +53,13 @@ function ChooseBook({
   selectedAddOnIds,
   addOnQuantities,
   cartSummary,
+  dedicationPageText,
   onSelectProduct,
   onSelectPageCount,
   onContinueToUploads,
   onToggleAddOn,
   onAddOnQuantityChange,
+  onDedicationPageTextChange,
 }) {
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedProductId) || products[0] || null,
@@ -238,19 +240,37 @@ function ChooseBook({
                                 const quantity = addOn.supportsQuantity
                                   ? addOnQuantities[addOn.id] || addOn.defaultQuantity || 1
                                   : 1;
+                                const isDedication = addOn.id === 'dedication-page';
                                 return (
-                                  <label className={`addon-card ${isChecked ? 'is-selected' : ''}`} key={addOn.id} role="listitem">
-                                    <span className="addon-check"><input type="checkbox" checked={isChecked} onChange={() => onToggleAddOn(addOn.id)} /></span>
-                                    <span className="addon-meta"><strong>{addOn.name}</strong><span>{addOn.description}</span></span>
-                                    <span className="addon-price">{formatMoney(addOn.priceCents)}</span>
-                                    {addOn.supportsQuantity && isChecked ? (
-                                      <span className="addon-qty" onClick={(e) => e.preventDefault()}>
-                                        <button type="button" onClick={() => onAddOnQuantityChange(addOn.id, quantity - 1)} disabled={quantity <= addOn.minQuantity} aria-label={`Reduce ${addOn.name} quantity`}>-</button>
-                                        <strong>{quantity}</strong>
-                                        <button type="button" onClick={() => onAddOnQuantityChange(addOn.id, quantity + 1)} disabled={quantity >= addOn.maxQuantity} aria-label={`Increase ${addOn.name} quantity`}>+</button>
-                                      </span>
+                                  <div key={addOn.id} style={{ display: 'contents' }}>
+                                    <label className={`addon-card ${isChecked ? 'is-selected' : ''}`} role="listitem">
+                                      <span className="addon-check"><input type="checkbox" checked={isChecked} onChange={() => onToggleAddOn(addOn.id)} /></span>
+                                      <span className="addon-meta"><strong>{addOn.name}</strong><span>{addOn.description}</span></span>
+                                      <span className="addon-price">{formatMoney(addOn.priceCents)}</span>
+                                      {addOn.supportsQuantity && isChecked ? (
+                                        <span className="addon-qty" onClick={(e) => e.preventDefault()}>
+                                          <button type="button" onClick={() => onAddOnQuantityChange(addOn.id, quantity - 1)} disabled={quantity <= addOn.minQuantity} aria-label={`Reduce ${addOn.name} quantity`}>-</button>
+                                          <strong>{quantity}</strong>
+                                          <button type="button" onClick={() => onAddOnQuantityChange(addOn.id, quantity + 1)} disabled={quantity >= addOn.maxQuantity} aria-label={`Increase ${addOn.name} quantity`}>+</button>
+                                        </span>
+                                      ) : null}
+                                    </label>
+                                    {isDedication && isChecked ? (
+                                      <div className="addon-dedication-input" style={{ gridColumn: '1 / -1' }}>
+                                        <label className="addon-dedication-label" htmlFor="dedication-text">Your dedication message</label>
+                                        <textarea
+                                          id="dedication-text"
+                                          className="addon-dedication-textarea"
+                                          placeholder="e.g. To Emma, may every page remind you how loved you are. ♡"
+                                          value={dedicationPageText || ''}
+                                          onChange={(e) => onDedicationPageTextChange(e.target.value)}
+                                          maxLength={300}
+                                          rows={3}
+                                        />
+                                        <p className="addon-dedication-hint">{(dedicationPageText || '').length}/300 characters</p>
+                                      </div>
                                     ) : null}
-                                  </label>
+                                  </div>
                                 );
                               })}
                             </div>

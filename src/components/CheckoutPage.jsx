@@ -135,53 +135,15 @@ function CheckoutPage({
           <aside className="order-summary">
             <h3>Order Summary</h3>
             <p className="summary-line summary-product">
-              <span>Book Type</span>
-              <strong>{selectedProduct?.name || 'Custom Twice Upon Us Coloring Book'}</strong>
+              <span>{`${selectedProduct?.name || 'Custom Book'} · ${cartSummary.selectedPageCount || pageCount} pages`}</span>
+              <strong>{formatMoney(cartSummary.productSubtotalCents)}</strong>
             </p>
-            <p className="summary-line">
-              <span>Category</span>
-              <strong>
-                {selectedProduct
-                  ? PRODUCT_TYPE_LABELS[selectedProduct.productType] || selectedProduct.productType
-                  : 'Custom Personalized Product'}
-              </strong>
-            </p>
-            <p className="summary-line">
-              <span>Page Count</span>
-              <strong>{`${cartSummary.selectedPageCount || pageCount} pages`}</strong>
-            </p>
-            <p className="summary-line">
-              <span>{`Base Book (${selectedProduct?.name || 'Selected Book'})`}</span>
-              <strong>{formatMoney(cartSummary.basePriceCents)}</strong>
-            </p>
-            <p className="summary-line">
-              <span>{`Extra Pages (${cartSummary.extraPagesCount} x ${formatMoney(
-                cartSummary.pricePerPageCents,
-              )})`}</span>
-              <strong>{formatMoney(cartSummary.extraPagesPriceTotalCents)}</strong>
-            </p>
-            <p className="summary-line">
-              <span>Add-ons</span>
-              <strong>{formatMoney(cartSummary.addOnsTotalCents)}</strong>
-            </p>
-            {cartSummary.addOns.map((addOn) => (
+            {cartSummary.addOns.length > 0 && cartSummary.addOns.map((addOn) => (
               <p className="summary-line" key={addOn.id}>
                 <span>{`${addOn.name}${addOn.quantity > 1 ? ` x${addOn.quantity}` : ''}`}</span>
                 <strong>{formatMoney(addOn.totalPriceCents)}</strong>
               </p>
             ))}
-            {uploadedCount ? (
-              <p className="summary-line">
-                <span>Uploaded Photos</span>
-                <strong>{uploadedCount}</strong>
-              </p>
-            ) : null}
-            {cartSummary.compareAtTotalCents ? (
-              <p className="summary-line">
-                <span>Compare-at</span>
-                <strong className="summary-compare">{formatMoney(cartSummary.compareAtTotalCents)}</strong>
-              </p>
-            ) : null}
             {promoResult ? (
               <p className="summary-line summary-discount">
                 <span>Promo ({promoResult.code})</span>

@@ -1018,6 +1018,50 @@ button.top-progress-chip {
   margin: 0;
 }
 
+/* ─── Dedication page text input ─── */
+
+.addon-dedication-input {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.addon-dedication-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.addon-dedication-textarea {
+  width: 100%;
+  border: 1.5px solid rgba(116, 70, 149, 0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: #faf8ff;
+  resize: vertical;
+  min-height: 72px;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.addon-dedication-textarea:focus {
+  outline: none;
+  border-color: var(--ui-primary);
+  background: #fff;
+}
+
+.addon-dedication-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 0;
+  text-align: right;
+}
+
 /* ─── Add-on grid ─── */
 
 .addon-grid {
@@ -2541,7 +2585,7 @@ button.top-progress-chip {
 }
 
 .auth-modal-header {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .auth-modal-title {
@@ -2560,7 +2604,7 @@ button.top-progress-chip {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .auth-form-row {
@@ -2635,18 +2679,26 @@ button.top-progress-chip {
 /* ─── Contact modal ─── */
 
 .contact-modal {
-  width: min(520px, 92vw);
+  width: min(480px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 28px 28px 24px;
+  overflow: hidden;
 }
 
 .contact-avatar {
-  font-size: 32px;
-  margin-bottom: 10px;
+  font-size: 24px;
+  margin-bottom: 6px;
 }
 
 .auth-field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  min-width: 0;
+}
+
+.auth-field-row .auth-field {
+  min-width: 0;
 }
 
 .contact-textarea {
@@ -2691,7 +2743,7 @@ button.top-progress-chip {
   }
 
   .contact-modal {
-    width: 92vw;
+    width: calc(100vw - 32px);
     padding: 20px;
   }
 
@@ -2918,7 +2970,86 @@ button.top-progress-chip {
   gap: 14px;
 }
 
+/* ─── Front cover gallery (inspiration, no selection) ─── */
+
+.cover-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cover-gallery-item {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid rgba(77, 47, 99, 0.12);
+  background: #fff;
+}
+
+.cover-gallery-img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.cover-gallery-label {
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cover-gallery-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ui-primary);
+}
+
 /* ─── Customize Back Cover step ─── */
+
+.customize-section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border: 1.5px solid rgba(77, 47, 99, 0.12);
+  border-radius: 16px;
+  background: #fdfbff;
+  margin-bottom: 16px;
+}
+
+.customize-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.customize-section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.customize-section-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.customize-field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
 
 .customize-back-step {
   width: 100%;

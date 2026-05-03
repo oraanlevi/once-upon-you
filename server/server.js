@@ -589,6 +589,9 @@ function normalizeOrderSubmission(rawBody) {
   const backCoverTagline = sanitizeOptionalText(rawBody?.backCoverTagline, 120);
   const backCoverDedication = sanitizeOptionalText(rawBody?.backCoverDedication, 300);
   const backCoverId = sanitizeOptionalText(rawBody?.backCoverId, 40);
+  const frontCoverId = sanitizeOptionalText(rawBody?.frontCoverId, 40);
+  const dedicationPageText = sanitizeOptionalText(rawBody?.dedicationPageText, 300);
+  const coverNotes = sanitizeOptionalText(rawBody?.coverNotes, 300);
 
   return {
     sessionId,
@@ -602,6 +605,9 @@ function normalizeOrderSubmission(rawBody) {
     backCoverTagline,
     backCoverDedication,
     backCoverId,
+    frontCoverId,
+    dedicationPageText,
+    coverNotes,
   };
 }
 
@@ -1662,6 +1668,9 @@ app.post('/api/orders/complete', async (req, res) => {
       backCoverTagline,
       backCoverDedication,
       backCoverId,
+      frontCoverId,
+      dedicationPageText,
+      coverNotes,
     } = normalizeOrderSubmission(req.body);
     console.log('[ORDER COMPLETE] body =', JSON.stringify(req.body, null, 2));
     console.log('[ORDER COMPLETE] includedPagesCount raw =', req.body?.includedPagesCount);
@@ -1831,9 +1840,12 @@ app.post('/api/orders/complete', async (req, res) => {
       promoCode: promoCodeUsed || null,
       discountCents: discountCentsUsed || null,
       loyaltyCode: null,
+      frontCoverId: frontCoverId || null,
       backCoverId: backCoverId || null,
       backCoverTagline: backCoverTagline || null,
       backCoverDedication: backCoverDedication || null,
+      dedicationPageText: dedicationPageText || null,
+      coverNotes: coverNotes || null,
       files: {
         originals: originalFiles.map((name) => `originals/${name}`),
         generated: generatedFiles.map((name) => `generated/${name}`),

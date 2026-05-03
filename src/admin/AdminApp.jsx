@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const API = 'http://localhost:5001';
+const API = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001').trim().replace(/\/+$/, '');
 const TOKEN_KEY = 'ouy_admin_token';
 
 const STATUS_COLORS = {
@@ -170,6 +170,55 @@ function OrderRow({ order, token, onStatusChange }) {
               </div>
             </div>
 
+            {/* Back Cover & Dedication */}
+            {(order.backCoverId || order.backCoverDedication || order.dedicationPageText) && (
+              <div style={{ padding: '0 20px 16px', borderTop: '1px solid #ede9fe', marginTop: 4 }}>
+                <p style={styles.imagesSectionTitle}>Back Cover & Dedication</p>
+                <div style={styles.expandedGrid}>
+                  {order.backCoverId && (
+                    <div>
+                      <p style={styles.expandedLabel}>Back Cover Style</p>
+                      <p style={styles.expandedValue}>{order.backCoverId}</p>
+                    </div>
+                  )}
+                  {order.backCoverDedication && (
+                    <div style={{ gridColumn: 'span 3' }}>
+                      <p style={styles.expandedLabel}>Back Cover Message</p>
+                      <p style={{ ...styles.expandedValue, fontStyle: 'italic', color: '#5b21b6' }}>"{order.backCoverDedication}"</p>
+                    </div>
+                  )}
+                  {order.dedicationPageText && (
+                    <div style={{ gridColumn: 'span 3' }}>
+                      <p style={styles.expandedLabel}>Dedication Page Text</p>
+                      <p style={{ ...styles.expandedValue, fontStyle: 'italic', color: '#5b21b6' }}>"{order.dedicationPageText}"</p>
+                    </div>
+                  )}
+                  {order.coverNotes && (
+                    <div style={{ gridColumn: 'span 3' }}>
+                      <p style={styles.expandedLabel}>Cover Notes / Preferences</p>
+                      <p style={{ ...styles.expandedValue, color: '#92400e', background: '#fffbeb', padding: '6px 10px', borderRadius: 8 }}>"{order.coverNotes}"</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Add-ons */}
+            {(order.pricing?.selectedAddOns?.length > 0 || order.selectedAddOns?.length > 0) && (
+              <div style={{ padding: '0 20px 16px', borderTop: '1px solid #ede9fe', marginTop: 4 }}>
+                <p style={styles.imagesSectionTitle}>Add-ons</p>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {(order.pricing?.selectedAddOns || order.selectedAddOns || []).map((addOn, i) => (
+                    <div key={i} style={{ background: '#f5f0ff', border: '1px solid #c4a8f0', borderRadius: 10, padding: '8px 14px', fontSize: 13 }}>
+                      <strong>{addOn.name}</strong>
+                      {addOn.quantity > 1 && <span style={{ color: '#7c6f8e' }}> ×{addOn.quantity}</span>}
+                      <span style={{ color: '#059669', marginLeft: 8 }}>{formatMoney(addOn.totalPriceCents)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Promo / Loyalty */}
             {(order.promoCode || order.loyaltyCode) && (
               <div style={styles.promoRow}>
@@ -195,8 +244,29 @@ function OrderRow({ order, token, onStatusChange }) {
             {/* Images */}
             {order.files && (order.files.originals?.length > 0 || order.files.generated?.length > 0) && (
               <div style={styles.imagesSection}>
-                <p style={styles.imagesSectionTitle}>Pages — Original vs Generated</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '16px 0 12px' }}>
+                  <p style={{ ...styles.imagesSectionTitle, margin: 0 }}>Pages — Original vs Generated</p>
+                  {order.files.generated?.length > 0 && (
+                    <button
+                      style={{ ...styles.refreshBtn, fontSize: 12 }}
+                      onClick={() => {
+                        (order.files.generated || []).forEach((genPath, i) => {
+                          const genFile = genPath.split('/').pop();
+                          setTimeout(() => {
+                            const a = document.createElement('a');
+                            a.href = `${imgSrc(API, order.orderId, 'generated', genFile, token)}&dl=1`;
+                            a.download = genFile;
+                            a.click();
+                          }, i * 600);
+                        });
+                      }}
+                    >
+                      ↓ Download All Pages
+                    </button>
+                  )}
+                </div>
                 <div style={styles.pagesGrid}>
+
                   {(order.files.originals || []).map((origPath, i) => {
                     const origFile = origPath.split('/').pop();
                     const genPath = (order.files.generated || [])[i];
@@ -241,9 +311,129 @@ function OrderRow({ order, token, onStatusChange }) {
   );
 }
 
+// ─── Products ─────────────────────────────────────────────────────────────────
+
+function ProductsTab({ token }) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null); // { product, basePriceCents, addOnPrices: {id: '$'} }
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    fetch(`${API}/api/products`)
+      .then((r) => r.json())
+      .then((d) => setProducts(d.products || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const startEdit = (p) => {
+    const addOnPrices = {};
+    (p.addOns || []).forEach((a) => { addOnPrices[a.id] = (a.priceCents / 100).toFixed(2); });
+    setEditing({ product: p, basePriceCents: (p.basePriceCents / 100).toFixed(2), addOnPrices });
+    setNotice('');
+  };
+
+  const save = async () => {
+    if (!editing) return;
+    setSaving(true);
+    setNotice('');
+    try {
+      const updatedAddOns = (editing.product.addOns || []).map((a) => ({
+        ...a,
+        priceCents: Math.round(Number(editing.addOnPrices[a.id] || a.priceCents / 100) * 100),
+      }));
+      const res = await fetch(`${API}/api/products/${editing.product.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        body: JSON.stringify({ ...editing.product, basePriceCents: Math.round(Number(editing.basePriceCents) * 100), addOns: updatedAddOns }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save.');
+      setProducts((prev) => prev.map((p) => p.id === editing.product.id ? data.product : p));
+      setNotice('Saved!');
+      setEditing(null);
+    } catch (err) {
+      setNotice(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const priceInput = (value, onChange) => (
+    <input
+      type="number" step="0.01" min="0.01" value={value} onChange={onChange}
+      style={{ width: 70, padding: '3px 6px', borderRadius: 6, border: '1.5px solid #7c3aed', fontSize: 13 }}
+    />
+  );
+
+  if (loading) return <div style={styles.centered}>Loading products…</div>;
+
+  return (
+    <div style={{ padding: '0 0 40px' }}>
+      {products.map((p) => {
+        const isEditing = editing?.product?.id === p.id;
+        return (
+          <div key={p.id} style={{ background: '#fff', borderRadius: 16, border: '1px solid #ede9fe', marginBottom: 20, overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
+            {/* Product header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #f0ebff', background: '#faf8ff' }}>
+              <div>
+                <strong style={{ fontSize: 15, color: '#1e1033' }}>{p.name}</strong>
+                <span style={{ marginLeft: 10, fontSize: 12, color: '#7c6f8e' }}>{p.id}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {isEditing ? (
+                  <>
+                    <button onClick={save} disabled={saving} style={{ ...styles.refreshBtn, borderColor: '#10b981', color: '#10b981' }}>{saving ? 'Saving…' : 'Save'}</button>
+                    <button onClick={() => setEditing(null)} style={styles.logoutBtn}>Cancel</button>
+                  </>
+                ) : (
+                  <button onClick={() => startEdit(p)} style={styles.refreshBtn}>Edit Prices</button>
+                )}
+              </div>
+            </div>
+
+            {/* Base prices */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0, borderBottom: '1px solid #f0ebff' }}>
+              {[
+                ['Base Price', isEditing ? priceInput(editing.basePriceCents, (e) => setEditing((prev) => ({ ...prev, basePriceCents: e.target.value }))) : formatMoney(p.basePriceCents)],
+                ['Per Page', formatMoney(p.pricePerPageCents)],
+                ['Page Options', (p.availablePageCounts || []).join(', ')],
+              ].map(([label, val]) => (
+                <div key={label} style={{ padding: '12px 20px', borderRight: '1px solid #f0ebff' }}>
+                  <p style={styles.expandedLabel}>{label}</p>
+                  <p style={{ margin: 0, fontSize: 14, color: '#1e1033', fontWeight: 600 }}>{val}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Add-ons */}
+            {(p.addOns || []).length > 0 && (
+              <div style={{ padding: '12px 20px' }}>
+                <p style={{ ...styles.expandedLabel, marginBottom: 10 }}>Add-ons</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {(p.addOns || []).map((a) => (
+                    <div key={a.id} style={{ background: '#f5f0ff', border: '1px solid #ddd6fe', borderRadius: 10, padding: '8px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 600, color: '#1e1033' }}>{a.name}</span>
+                      {isEditing ? priceInput(editing.addOnPrices[a.id], (e) => setEditing((prev) => ({ ...prev, addOnPrices: { ...prev.addOnPrices, [a.id]: e.target.value } }))) : <span style={{ color: '#5b21b6', fontWeight: 700 }}>{formatMoney(a.priceCents)}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {notice && <p style={{ color: notice === 'Saved!' ? '#059669' : '#dc2626', fontWeight: 600 }}>{notice}</p>}
+    </div>
+  );
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 function Dashboard({ token, onLogout }) {
+  const [tab, setTab] = useState('orders');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -308,6 +498,16 @@ function Dashboard({ token, onLogout }) {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+        {[['orders', 'Orders'], ['products', 'Products']].map(([val, label]) => (
+          <button key={val} onClick={() => setTab(val)} style={{ ...styles.pill, ...(tab === val ? styles.pillActive : {}) }}>{label}</button>
+        ))}
+      </div>
+
+      {tab === 'products' ? <ProductsTab token={token} /> : null}
+
+      {tab === 'orders' && <>
       {/* Stats */}
       <div style={styles.statsRow}>
         {Object.entries(STATUS_LABELS).map(([val, label]) => (
@@ -370,6 +570,7 @@ function Dashboard({ token, onLogout }) {
           </table>
         </div>
       )}
+      </>}
     </div>
   );
 }

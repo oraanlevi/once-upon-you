@@ -8,14 +8,13 @@ function OrderSuccess({
   return (
     <section className="order-success-step" aria-live="polite">
       <div className="order-success-card">
-        <p className="builder-eyebrow">Order received</p>
-        <h2>Order received</h2>
+        <p className="builder-eyebrow">Order confirmed</p>
+        <h2>Thank you for your order!</h2>
         <p className="success-magic-text">
-          Your memories are now becoming a coloring book.
+          Your personalized coloring book is on its way.
         </p>
         <p className="success-support-note">
-          We'll send progress updates to your email as your personalized pages are
-          prepared.
+          We'll have your book ready and shipped within 5 business days. You'll receive a confirmation email shortly.
         </p>
 
         <div className="success-meta">
@@ -24,11 +23,11 @@ function OrderSuccess({
             <strong>{orderNumber}</strong>
           </p>
           <p>
-            <span>Delivery Estimate</span>
-            <strong>{deliveryEstimate}</strong>
+            <span>Estimated Shipping</span>
+            <strong>Within 5 business days</strong>
           </p>
           <p>
-            <span>Support</span>
+            <span>Questions?</span>
             <strong>{supportEmail}</strong>
           </p>
         </div>

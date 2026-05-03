@@ -21,12 +21,13 @@ function BookCover({ isOpening, onStart }) {
               />
               <p className="cover-tagline">
                 Upload your favorite photos and we transform each one into a
-                beautiful hand-drawn coloring page — bound into a keepsake
-                book that's entirely yours.
+                beautiful coloring page, bound into a keepsake book that's
+                entirely yours.
               </p>
               <button
                 type="button"
                 className="cover-button"
+                style={{ marginTop: '28px' }}
                 onClick={onStart}
                 disabled={isOpening}
               >
