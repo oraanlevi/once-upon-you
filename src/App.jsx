@@ -453,6 +453,7 @@ function App() {
   const [generationError, setGenerationError] = useState('');
   const autoGenerationStartedRef = useRef(false);
   const samplePreGenTimerRef = useRef(null);
+  const mainContentRef = useRef(null);
   const [storageNotice, setStorageNotice] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [promoResult, setPromoResult] = useState(null); // { discountCents, code, description }
@@ -603,6 +604,13 @@ function App() {
   useEffect(() => {
     uploadedImagesRef.current = uploadedImages;
   }, [uploadedImages]);
+
+  // Scroll to top whenever the step or intro stage changes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+  }, [currentStep, introStage]);
 
   useEffect(() => {
     if (introStage !== 'opening') {
@@ -1625,7 +1633,7 @@ function App() {
               )}
             </div>
           </header>
-          <div className="configurator-main-content">
+          <div className="configurator-main-content" ref={mainContentRef}>
             <div className="builder-flow">{content}</div>
             <div className="page-watermark-wrap">
               <img src="/images/logo-title.png" alt="Twice Upon Us" className="page-watermark" />
