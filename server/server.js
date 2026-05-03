@@ -20,10 +20,10 @@ const SERVER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const port = Number(process.env.PORT || 5001);
-const GENERATED_ORDERS_ROOT = path.resolve(SERVER_ROOT, 'generated-orders');
-const PERSISTENT_CACHE_ROOT = path.resolve(SERVER_ROOT, 'persistent-cache', 'coloring-pages');
-const ORDERS_ROOT = path.resolve(SERVER_ROOT, 'orders');
 const DATA_ROOT = path.resolve(SERVER_ROOT, 'data');
+const ORDERS_ROOT = path.resolve(DATA_ROOT, 'orders');
+const GENERATED_ORDERS_ROOT = path.resolve(DATA_ROOT, 'generated-orders');
+const PERSISTENT_CACHE_ROOT = path.resolve(DATA_ROOT, 'persistent-cache', 'coloring-pages');
 const PRODUCTS_CATALOG_PATH = path.resolve(DATA_ROOT, 'products.json');
 const USERS_PATH = path.resolve(DATA_ROOT, 'users.json');
 const PROMO_CODES_PATH = path.resolve(DATA_ROOT, 'promo-codes.json');
