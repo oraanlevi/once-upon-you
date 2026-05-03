@@ -429,7 +429,7 @@ function App() {
     );
   }, []);
 
-  const [introStage, setIntroStage] = useState(persistedState?.introStage ?? 'cover');
+  const [introStage, setIntroStage] = useState('cover');
   const [currentStep, setCurrentStep] = useState(persistedState?.currentStep ?? 'choose');
   const [selectedPageCount, setSelectedPageCount] = useState(
     persistedState?.selectedPageCount ?? 15,
@@ -451,6 +451,8 @@ function App() {
   const [isGeneratingPages, setIsGeneratingPages] = useState(false);
   const [generationProgress, setGenerationProgress] = useState('');
   const [generationError, setGenerationError] = useState('');
+  const autoGenerationStartedRef = useRef(false);
+  const samplePreGenTimerRef = useRef(null);
   const [storageNotice, setStorageNotice] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [promoResult, setPromoResult] = useState(null); // { discountCents, code, description }
@@ -544,14 +546,59 @@ function App() {
 
   useEffect(() => {
     if (currentStep !== 'preview') {
+      autoGenerationStartedRef.current = false;
+      return;
+    }
+    if (autoGenerationStartedRef.current) return;
+
+    const uploads = uploadedImagesRef.current;
+
+    // Pick the 3rd uploaded photo (index 2) as the sample, fallback to first available
+    const preferredIndex = uploads.findIndex((img, i) => i === 2 && img && img.url);
+    const sampleIndex = preferredIndex >= 0
+      ? preferredIndex
+      : uploads.findIndex((img) => img && img.url);
+
+    if (sampleIndex < 0) return;
+
+    // If this sample was already generated, just show it
+    if (generatedImages[sampleIndex]) {
+      setSamplePreviewIndex(sampleIndex);
+      setPreviewGenerationState('ready');
       return;
     }
 
-    console.debug('Preview image source summary', {
-      generatedCount: generatedImages.filter(Boolean).length,
-      uploadedCount: uploadedImages.filter(Boolean).length,
-    });
-  }, [currentStep, generatedImages, uploadedImages]);
+    autoGenerationStartedRef.current = true;
+
+    (async () => {
+      setIsGeneratingPages(true);
+      setGenerationError('');
+      setSamplePreviewIndex(sampleIndex);
+      setPreviewGenerationState('generating');
+      setGenerationProgress('Preparing your sample preview…');
+
+      try {
+        const result = await requestColoringPage(uploads[sampleIndex], {
+          sessionId,
+          pageIndex: sampleIndex,
+          sourceFile: uploadedSourceFilesRef.current[sampleIndex],
+        });
+        setGeneratedImages((prev) => {
+          const next = [...prev];
+          next[sampleIndex] = result;
+          return next;
+        });
+        setPreviewGenerationState('ready');
+      } catch (err) {
+        setPreviewGenerationState('idle');
+        setSamplePreviewIndex(-1);
+        setGenerationError(getFriendlyGenerationError(err?.message));
+      } finally {
+        setIsGeneratingPages(false);
+        setGenerationProgress('');
+      }
+    })();
+  }, [currentStep]);
 
   useEffect(() => {
     uploadedImagesRef.current = uploadedImages;
@@ -965,8 +1012,13 @@ function App() {
     }
 
     uploadedSourceFilesRef.current[index] = file;
-    setPreviewGenerationState('idle');
-    setSamplePreviewIndex(-1);
+    // If they replaced the sample photo, cancel any pending pre-generation and reset
+    if (index === samplePreviewIndex || index === 2) {
+      clearTimeout(samplePreGenTimerRef.current);
+      setPreviewGenerationState('idle');
+      setSamplePreviewIndex(-1);
+      autoGenerationStartedRef.current = false;
+    }
 
     const reader = new FileReader();
 
@@ -1006,6 +1058,33 @@ function App() {
         }
         return nextImages;
       });
+
+      // Pre-generate the sample photo in the background so preview is instant.
+      // Use 3rd slot (index 2) as sample; fall back to 1st slot (index 0).
+      // Debounced 4s so rapid photo swaps only trigger 1 generation.
+      const isSampleSlot = index === 2 || (index === 0 && uploadedImagesRef.current.filter(Boolean).length < 3);
+      if (isSampleSlot) {
+        clearTimeout(samplePreGenTimerRef.current);
+        const imageForGen = { url: dataUrl, isDataUrl: true, name: file.name };
+        samplePreGenTimerRef.current = setTimeout(() => {
+          requestColoringPage(imageForGen, {
+            sessionId,
+            pageIndex: index,
+            sourceFile: file,
+          }).then((result) => {
+            setGeneratedImages((prev) => {
+              const next = [...prev];
+              next[index] = result;
+              return next;
+            });
+            setSamplePreviewIndex(index);
+            setPreviewGenerationState('ready');
+            autoGenerationStartedRef.current = true;
+          }).catch(() => {
+            // silently fail — will retry when they reach preview
+          });
+        }, 4000);
+      }
     };
 
     reader.readAsDataURL(file);
