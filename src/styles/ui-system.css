@@ -82,7 +82,7 @@ body {
   width: 100vw;
   height: 100vh;
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr);
+  grid-template-columns: clamp(180px, 18vw, 220px) minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -90,10 +90,10 @@ body {
   position: sticky;
   top: 0;
   height: 100vh;
-  width: 210px;
+  width: 100%;
   background: linear-gradient(180deg, rgba(255, 249, 242, 0.95) 0%, rgba(255, 240, 232, 0.9) 100%);
   border-right: 1px solid rgba(200, 180, 220, 0.2);
-  padding: 96px 16px 24px;
+  padding: clamp(72px, 10vh, 96px) clamp(10px, 1.5vw, 16px) 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -176,7 +176,7 @@ body {
   min-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: calc(var(--ui-header-height) + var(--builder-content-top-space)) 28px 40px;
+  padding: calc(var(--ui-header-height) + var(--builder-content-top-space)) clamp(14px, 3vw, 28px) 40px;
   box-sizing: border-box;
   scroll-padding-top: calc(var(--ui-header-height) + var(--builder-content-top-space));
   background: transparent;
@@ -661,12 +661,39 @@ button.top-progress-chip {
 .builder-lede,
 .upload-progress,
 .preview-note,
-.processing-copy,
+.processing-copy {
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.success-heart {
+  font-size: 2.5rem;
+  color: var(--ui-primary);
+  line-height: 1;
+  margin-bottom: 8px;
+  animation: heartbeat 1.8s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.15); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.08); }
+  56% { transform: scale(1); }
+}
+
 .success-magic-text,
 .summary-delivery,
 .admin-editor-wrap p {
   color: var(--text-secondary);
   line-height: 1.65;
+}
+
+.success-support-note {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 4px;
 }
 
 /* ─── Choose book page ─── */
@@ -1448,6 +1475,27 @@ button.top-progress-chip {
 .checkout-payment-pane {
   display: grid;
   gap: 16px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.checkout-form {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .payment-element-shell {
@@ -1581,11 +1629,11 @@ button.top-progress-chip {
 
 .checkout-layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
   gap: 22px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .checkout-layout {
     grid-template-columns: 1fr;
   }
@@ -1689,6 +1737,42 @@ button.top-progress-chip {
 }
 
 /* ─── Action rows ─── */
+
+.preview-review-card {
+  background: var(--ui-surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-review-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ui-primary);
+  padding: 8px 12px 6px;
+}
+
+.preview-review-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.preview-review-empty {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--ui-muted);
+}
 
 .preview-actions,
 .success-actions,
@@ -1876,10 +1960,6 @@ button.top-progress-chip {
 /* Tablet & mobile: hide sidebar, go single-column */
 /* Medium screens: compact action buttons before mobile collapse */
 @media (max-width: 1100px) {
-  .auth-header-name {
-    display: none;
-  }
-
   .auth-header-btn {
     padding: 6px 10px;
   }
@@ -1889,14 +1969,7 @@ button.top-progress-chip {
   }
 }
 
-@media (max-width: 960px) {
-  .reset-book-button {
-    padding: 0 10px;
-    min-width: 34px;
-  }
-}
-
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .configurator-shell {
     grid-template-columns: 1fr;
   }
@@ -1907,38 +1980,17 @@ button.top-progress-chip {
 
   .configurator-topbar {
     padding: 0 12px;
-    gap: 0;
-    height: auto;
-    flex-wrap: wrap;
+    gap: 8px;
+    height: 78px;
     display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-template-rows: auto auto;
-    row-gap: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
-  /* Adjust header height variable for mobile */
-  :root { --ui-header-height: 88px; }
-
-  .configurator-topbar-brand {
-    grid-column: 1;
-    grid-row: 1;
-    padding: 8px 0;
-  }
-
-  .configurator-topbar-actions {
-    grid-column: 3;
-    grid-row: 1;
-    gap: 6px;
-    padding: 8px 0;
-  }
+  :root { --ui-header-height: 78px; }
 
   .configurator-topbar-nav {
-    grid-column: 1 / -1;
-    grid-row: 2;
     justify-content: flex-start;
     overflow-x: auto;
-    padding: 6px 0 8px;
-    border-top: 1px solid rgba(116, 70, 149, 0.08);
     scrollbar-width: none;
   }
 
@@ -1946,14 +1998,12 @@ button.top-progress-chip {
     display: none;
   }
 
-  /* Shrink logo on mobile */
   .builder-header-logo {
     height: 52px;
     width: auto;
     max-width: none;
   }
 
-  /* Progress chips */
   .top-progress-chip {
     font-size: 0.65rem;
     padding: 4px 10px;
@@ -1978,10 +2028,45 @@ button.top-progress-chip {
     padding-right: 14px;
   }
 
-  /* Reset button — smaller on mobile */
   .reset-book-button {
     padding: 5px 10px;
     font-size: 0.65rem;
+  }
+
+  /* Checkout stacks on tablet */
+  .checkout-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Addon grid single col */
+  .addon-grid,
+  .addon-grid--two {
+    grid-template-columns: 1fr;
+  }
+
+  /* Product cards compact */
+  .product-grid,
+  .product-grid--three {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .product-card {
+    padding: 14px 14px 16px;
+    gap: 10px;
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    align-items: start;
+  }
+
+  .product-card-visual {
+    aspect-ratio: 3 / 4;
+    min-height: unset;
+    width: 80px;
+  }
+
+  .product-card-perks {
+    display: none;
   }
 }
 
@@ -2032,15 +2117,7 @@ button.top-progress-chip {
 }
 
 /* Mobile: compact addon cards */
-@media (max-width: 768px) {
-  .addon-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .addon-grid--two {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 560px) {
   .addon-card {
     padding: 10px 12px;
   }
@@ -2059,27 +2136,7 @@ button.top-progress-chip {
 }
 
 /* Mobile: compact product cards */
-@media (max-width: 768px) {
-  .product-grid,
-  .product-grid--three {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .product-card {
-    padding: 14px 14px 16px;
-    gap: 10px;
-    display: grid;
-    grid-template-columns: 80px 1fr;
-    align-items: start;
-  }
-
-  .product-card-visual {
-    aspect-ratio: 3 / 4;
-    min-height: unset;
-    width: 80px;
-  }
-
+@media (max-width: 560px) {
   .product-card-copy {
     padding-top: 4px;
   }
@@ -2090,10 +2147,6 @@ button.top-progress-chip {
 
   .product-card-description {
     font-size: 11px;
-  }
-
-  .product-card-perks {
-    display: none;
   }
 
   .product-card-price {
@@ -2114,7 +2167,7 @@ button.top-progress-chip {
 }
 
 /* Mobile: smaller cover button + logo */
-@media (max-width: 768px) {
+@media (max-width: 560px) {
   .cover-button {
     width: auto;
     padding: 12px 32px;
@@ -2128,7 +2181,7 @@ button.top-progress-chip {
 }
 
 /* Mobile: page count pills — clean 2-col grid */
-@media (max-width: 768px) {
+@media (max-width: 560px) {
   .builder-options--pills {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2140,24 +2193,17 @@ button.top-progress-chip {
 }
 
 /* Prevent any horizontal overflow at the root */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   html, body, #root {
     overflow-x: hidden;
     max-width: 100vw;
   }
 
-  .app-shell {
-    padding: clamp(0.5rem, 2vw, 1rem);
-    overflow-x: hidden;
-  }
-
-  /* Builder card full width on mobile */
   .builder-card {
     border-radius: 14px;
     padding: 16px;
   }
 
-  /* Book cover — ensure it fills width */
   .book-scene {
     width: 100%;
   }
@@ -2166,24 +2212,90 @@ button.top-progress-chip {
     min-height: max(70vh, 480px);
   }
 
-  /* Cover content padding */
   .cover-content {
     padding: 2rem 2rem 2rem 3.2rem;
   }
 
-  /* Product grid: single column on mobile */
-  .product-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  /* Showcase photos stack */
   .showcase-strip {
     grid-template-columns: 1fr;
   }
 }
 
 /* ─── Promo Code ─────────────────────────────────────────────────── */
+
+.checkout-additional-copy {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  background: rgba(116, 70, 149, 0.04);
+  border: 1px solid rgba(116, 70, 149, 0.12);
+}
+
+.checkout-additional-copy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.checkout-additional-copy-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.checkout-additional-copy-label span {
+  font-size: 11px;
+  color: var(--ui-muted);
+}
+
+.checkout-additional-copy-hint {
+  font-size: 11px;
+  color: var(--ui-primary);
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.addon-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ui-surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 4px 6px;
+}
+
+.addon-qty button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border-soft);
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ui-primary);
+  flex-shrink: 0;
+}
+
+.addon-qty button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.addon-qty strong {
+  min-width: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.addon-qty--checkout {
+  background: white;
+}
 
 .promo-code-row {
   margin-top: 10px;

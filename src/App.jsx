@@ -74,7 +74,6 @@ const TRACKER_STEPS = [
   { key: 'choose',     label: 'Choose Book',   shortLabel: 'Book',     icon: '◈' },
   { key: 'customize',  label: 'Back Cover',    shortLabel: 'Cover',    icon: '◉' },
   { key: 'upload',     label: 'Upload Photos', shortLabel: 'Photos',   icon: '⇪' },
-  { key: 'preview',    label: 'Preview',       shortLabel: 'Preview',  icon: '▤' },
   { key: 'finalize',   label: 'Checkout',      shortLabel: 'Checkout', icon: '◧' },
 ];
 
@@ -1550,13 +1549,8 @@ function App() {
       <PreviewBook
         pageCount={selectedPageCount}
         uploads={uploadedImages}
-        generatedImages={generatedImages}
-        samplePreviewIndex={samplePreviewIndex}
-        isGenerating={isGeneratingPages}
-        generationProgress={generationProgress}
-        generationError={generationError}
         onBackToUploads={() => setCurrentStep('upload')}
-        onFinishOrder={() => { setGenerationError(''); goToNextStep('checkout'); }}
+        onFinishOrder={() => goToNextStep('checkout')}
       />
     );
   } else if (currentStep === 'checkout' || currentStep === 'payment') {
@@ -1568,6 +1562,18 @@ function App() {
         shippingData={shippingData}
         selectedProduct={selectedProduct}
         cartSummary={cartSummary}
+        additionalCopyAddon={selectedProduct?.addOns?.find(a => a.id === 'additional-copy') || null}
+        additionalCopyQuantity={selectedAddOnIds.includes('additional-copy') ? (addOnQuantities['additional-copy'] || 1) : 0}
+        onAdditionalCopyQuantityChange={(qty) => {
+          if (qty === 0) {
+            setSelectedAddOnIds(prev => prev.filter(id => id !== 'additional-copy'));
+          } else {
+            if (!selectedAddOnIds.includes('additional-copy')) {
+              setSelectedAddOnIds(prev => [...prev, 'additional-copy']);
+            }
+            setAddOnQuantities(prev => ({ ...prev, 'additional-copy': qty }));
+          }
+        }}
         onFieldChange={handleShippingFieldChange}
         onBack={currentStep === 'payment' ? handlePaymentBack : handleCheckoutBack}
         onContinueToPayment={handleContinueToPayment}
@@ -1579,12 +1585,6 @@ function App() {
         isPreparingPayment={isPreparingPayment}
         paymentSetupError={paymentSetupError}
         stripePromise={stripePromise}
-        isGeneratingPreview={isGeneratingPages}
-        previewReady={isPreviewReady}
-        previewStatusText={generationProgress}
-        previewError={generationError}
-        onReviewPreview={handleReviewPreview}
-        onRequestPreview={handleGenerateSamplePreview}
         backLabel={currentStep === 'payment' ? 'Back to Checkout' : checkoutBackLabel}
         promoCode={promoCode}
         promoResult={promoResult}
@@ -1600,6 +1600,7 @@ function App() {
       <OrderSuccess
         orderNumber={orderInfo?.number ?? 'TUU-000000'}
         deliveryEstimate={orderInfo?.deliveryEstimate ?? deliveryEstimateRef.current}
+        customerEmail={shippingData?.email || ''}
         supportEmail={SUPPORT_EMAIL}
         onStartOver={handleStartOver}
         onReturnHome={handleReturnHome}

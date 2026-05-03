@@ -22,7 +22,7 @@
         { "id": "gift-wrap", "name": "Gift Wrap", "description": "Boutique wrapping with a handwritten note card.", "priceCents": 400, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "greeting-card", "name": "Greeting Card", "description": "Printed card with a custom message, perfect for gifting.", "priceCents": 300, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "dedication-page", "name": "Dedication Page", "description": "A heartfelt dedication printed at the front of the book.", "priceCents": 400, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
-        { "id": "custom-cover-photo", "name": "Custom Cover Photo", "description": "Feature one of your photos on the actual book cover.", "priceCents": 600, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
+        { "id": "custom-cover-photo", "name": "Photo Cover", "description": "Use one of your uploaded photos as the book cover design.", "priceCents": 600, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "laminated-cover", "name": "Laminated Cover", "description": "Glossy laminated cover upgrade for a premium, durable finish.", "priceCents": 500, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "rush-order", "name": "Rush Order", "description": "Priority production and faster dispatch.", "priceCents": 1200, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 }
       ]
@@ -46,10 +46,10 @@
         { "id": "gift-wrap", "name": "Gift Wrap", "description": "Boutique wrapping with a handwritten note card.", "priceCents": 400, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "greeting-card", "name": "Greeting Card", "description": "Printed card with a custom message, perfect for gifting.", "priceCents": 300, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "dedication-page", "name": "Dedication Page", "description": "A heartfelt dedication printed at the front of the book.", "priceCents": 400, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
-        { "id": "custom-cover-photo", "name": "Custom Cover Photo", "description": "Feature one of your photos on the actual book cover.", "priceCents": 600, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
+        { "id": "custom-cover-photo", "name": "Photo Cover", "description": "Use one of your uploaded photos as the book cover design.", "priceCents": 600, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "laminated-cover", "name": "Laminated Cover", "description": "Glossy laminated cover upgrade for a premium, durable finish.", "priceCents": 500, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "coloring-pencil-set", "name": "Coloring Pencil Set", "description": "Bundled mini colored pencil set shipped with your book.", "priceCents": 999, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
-        { "id": "additional-copy", "name": "Additional Copy", "description": "Add another copy for siblings or grandparents.", "priceCents": 1800, "supportsQuantity": true, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 6 },
+        { "id": "additional-copy", "name": "Additional Copy", "description": "Add another copy for siblings or grandparents.", "priceCents": 1500, "supportsQuantity": true, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 6 },
         { "id": "rush-order", "name": "Rush Order", "description": "Priority production and faster dispatch.", "priceCents": 1200, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 }
       ]
     },
@@ -74,9 +74,9 @@
         { "id": "greeting-card", "name": "Greeting Card", "description": "Printed card with a custom message, perfect for gifting.", "priceCents": 300, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "dedication-page", "name": "Dedication Page", "description": "A heartfelt dedication printed at the front of the book.", "priceCents": 400, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "custom-name", "name": "Custom Name", "description": "Add a personalized title and dedication.", "priceCents": 400, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
-        { "id": "custom-cover-photo", "name": "Custom Cover Photo", "description": "Feature one of your photos on the actual book cover.", "priceCents": 600, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
+        { "id": "custom-cover-photo", "name": "Photo Cover", "description": "Use one of your uploaded photos as the book cover design.", "priceCents": 600, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
         { "id": "coloring-pencil-set", "name": "Coloring Pencil Set", "description": "Bundled mini colored pencil set shipped with your book.", "priceCents": 999, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 },
-        { "id": "additional-copy", "name": "Additional Copy", "description": "Add another copy for siblings or grandparents.", "priceCents": 1800, "supportsQuantity": true, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 6 },
+        { "id": "additional-copy", "name": "Additional Copy", "description": "Add another copy for siblings or grandparents.", "priceCents": 1500, "supportsQuantity": true, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 6 },
         { "id": "rush-order", "name": "Rush Order", "description": "Priority production and faster dispatch.", "priceCents": 1200, "supportsQuantity": false, "defaultQuantity": 1, "minQuantity": 1, "maxQuantity": 1 }
       ]
     }

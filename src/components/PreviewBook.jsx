@@ -1,89 +1,39 @@
-function PreviewBook({
-  generatedImages,
-  uploads,
-  samplePreviewIndex,
-  isGenerating,
-  generationProgress,
-  generationError,
-  onBackToUploads,
-  onFinishOrder,
-}) {
-  const safePreviewIndex = samplePreviewIndex >= 0 ? samplePreviewIndex : 0;
-  const generatedImage = generatedImages?.[safePreviewIndex] ?? null;
-  const hasGenerated =
-    generatedImage &&
-    typeof generatedImage.url === 'string' &&
-    generatedImage.url.length > 0;
-
+function PreviewBook({ uploads, pageCount, onBackToUploads, onFinishOrder }) {
   return (
     <section className="preview-step" aria-labelledby="preview-book-title">
       <div className="preview-shell preview-shell--focused">
 
-        {/* Header */}
         <div className="preview-top preview-top--focused">
-          <p className="builder-eyebrow">Your Sample Page</p>
-          <h2 id="preview-book-title">
-            {isGenerating ? 'Creating your coloring page…' : hasGenerated ? 'Here\'s a peek inside your book.' : 'Your preview is almost ready.'}
-          </h2>
+          <p className="builder-eyebrow">Step 3 of 3</p>
+          <h2 id="preview-book-title">Review your photos.</h2>
           <p className="preview-note">
-            {isGenerating
-              ? 'This usually takes 15–20 seconds. Hang tight!'
-              : hasGenerated
-              ? 'This is one page from your book. Final pages are hand-refined for even sharper detail.'
-              : 'Something went wrong generating your preview. You can still continue to checkout.'}
+            Make sure everything looks right before you checkout. These are the photos we'll turn into your coloring book.
           </p>
         </div>
 
-        {/* Preview image */}
-        <div className="preview-single-page">
-          <article className="preview-page preview-page--single">
-            <div className="preview-page-media">
-              {isGenerating ? (
-                <div className="preview-image-loading" aria-label="Generating preview…">
-                  <span className="preview-loading-spinner" aria-hidden="true" />
-                  <p className="preview-loading-text">
-                    {generationProgress || 'Turning your photo into a coloring page…'}
-                  </p>
-                </div>
-              ) : hasGenerated ? (
+        <div className="upload-grid upload-grid--focused">
+          {uploads.map((image, index) => (
+            <div key={index} className="preview-review-card">
+              <p className="preview-review-label">Page {index + 1}</p>
+              {image?.url ? (
                 <img
-                  src={generatedImage.url}
-                  alt={`Sample coloring page ${safePreviewIndex + 1}`}
-                  className="preview-image"
+                  src={image.url}
+                  alt={`Page ${index + 1}`}
+                  className="preview-review-img"
                 />
               ) : (
-                <div className="preview-image-fallback" aria-hidden="true" />
+                <div className="preview-review-empty">No photo</div>
               )}
             </div>
-            {generationError && (
-              <p className="preview-error-note">{generationError}</p>
-            )}
-          </article>
+          ))}
         </div>
 
-        {/* Quality notice */}
-        {hasGenerated && (
-          <div className="preview-sample-notice">
-            <span className="preview-sample-badge">Sample Preview</span>
-            <p className="preview-sample-text">
-              Final pages are hand-refined with sharper lines, finer details, and a closer
-              likeness to your photos.
-            </p>
-          </div>
-        )}
-
-        {/* Actions */}
         <div className="preview-actions">
           <button type="button" className="upload-back" onClick={onBackToUploads}>
             ← Back to Photos
           </button>
-          <button
-            type="button"
-            className="create-book-button"
-            onClick={onFinishOrder}
-            disabled={isGenerating}
-          >
-            {isGenerating ? 'Generating…' : 'Continue to Checkout →'}
+          <button type="button" className="create-book-button" onClick={onFinishOrder}>
+            Continue to Checkout →
           </button>
         </div>
 

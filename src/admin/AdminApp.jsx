@@ -246,6 +246,17 @@ function OrderRow({ order, token, onStatusChange }) {
               </div>
             )}
 
+            {/* Generation status warning */}
+            {order.generationStatus && order.generationStatus !== 'complete' && (
+              <div style={{ margin: '12px 0', padding: '10px 14px', borderRadius: 8, background: order.generationStatus === 'pending' ? '#fff3cd' : '#fff8e1', border: `1px solid ${order.generationStatus === 'pending' ? '#ffc107' : '#ffca28'}`, fontSize: 13, color: '#7a5c00' }}>
+                <strong>{order.generationStatus === 'pending' ? '⚠️ No coloring pages generated' : '⚠️ Partial generation'}</strong>
+                {' — '}
+                {order.generationStatus === 'pending'
+                  ? 'OpenAI generation failed for all pages. Only originals are available. Please generate manually.'
+                  : `Only ${order.files?.generated?.length || 0} of ${order.pageCount} pages were generated. Please complete manually.`}
+              </div>
+            )}
+
             {/* Images */}
             {order.files && (order.files.originals?.length > 0 || order.files.generated?.length > 0) && (
               <div style={styles.imagesSection}>

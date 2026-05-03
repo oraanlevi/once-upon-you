@@ -1730,20 +1730,15 @@ app.post('/api/orders/complete', async (req, res) => {
       return;
     }
 
-    if (!generatedFiles.length) {
-      res.status(400).json({
-        error: 'No generated pages found for this session. Please generate pages first.',
-      });
-      return;
-    }
-
     const orderId = createOrderId();
     const orderRoot = path.join(ORDERS_ROOT, orderId);
     const orderOriginals = path.join(orderRoot, 'originals');
     const orderGenerated = path.join(orderRoot, 'generated');
 
     await fs.mkdir(orderOriginals, { recursive: true });
-    await fs.mkdir(orderGenerated, { recursive: true });
+    if (generatedFiles.length > 0) {
+      await fs.mkdir(orderGenerated, { recursive: true });
+    }
 
     await Promise.all([
       ...originalFiles.map((filename) =>
@@ -1846,6 +1841,7 @@ app.post('/api/orders/complete', async (req, res) => {
       backCoverDedication: backCoverDedication || null,
       dedicationPageText: dedicationPageText || null,
       coverNotes: coverNotes || null,
+      generationStatus: generatedFiles.length === 0 ? 'pending' : generatedFiles.length < pageCount ? 'partial' : 'complete',
       files: {
         originals: originalFiles.map((name) => `originals/${name}`),
         generated: generatedFiles.map((name) => `generated/${name}`),

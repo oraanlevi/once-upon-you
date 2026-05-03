@@ -20,6 +20,9 @@ function CheckoutPage({
   shippingData,
   selectedProduct,
   cartSummary,
+  additionalCopyAddon,
+  additionalCopyQuantity,
+  onAdditionalCopyQuantityChange,
   onFieldChange,
   onBack,
   onContinueToPayment,
@@ -31,12 +34,6 @@ function CheckoutPage({
   isPreparingPayment,
   paymentSetupError,
   stripePromise,
-  isGeneratingPreview,
-  previewReady,
-  previewStatusText,
-  previewError,
-  onReviewPreview,
-  onRequestPreview,
   backLabel,
   promoCode,
   promoResult,
@@ -81,56 +78,6 @@ function CheckoutPage({
           </p>
         </div>
 
-        <div className={`preview-status-panel${previewReady ? ' is-ready' : ''}`}>
-          <p className="preview-status-eyebrow">
-            {previewReady
-              ? 'Sample preview ready'
-              : isGeneratingPreview
-                ? 'Sample preview generating'
-                : 'Sample preview'}
-          </p>
-          <h3>
-            {previewReady
-              ? 'Your sample preview is ready to view.'
-              : isGeneratingPreview
-                ? 'Your sample preview is being prepared.'
-                : 'Want a quick look before the full book is prepared?'}
-          </h3>
-          <p className="preview-status-copy">
-            {previewReady
-              ? 'Review one generated sample page, or skip it and continue checkout normally.'
-              : isGeneratingPreview
-                ? 'This can take a few minutes. You can continue filling out your information while we prepare the sample.'
-                : 'Preview one sample page from your uploaded photos. This is completely optional.'}
-          </p>
-          {isGeneratingPreview && previewStatusText ? (
-            <p className="preview-status-progress">{previewStatusText}</p>
-          ) : null}
-          {!isGeneratingPreview && previewError ? (
-            <p className="preview-status-progress">{previewError}</p>
-          ) : null}
-          <div className="preview-status-actions">
-            {previewReady ? (
-              <button
-                type="button"
-                className="upload-back preview-ready-button"
-                onClick={onReviewPreview}
-              >
-                Preview One Page
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="upload-back preview-ready-button"
-                onClick={onRequestPreview}
-                disabled={isGeneratingPreview}
-              >
-                {isGeneratingPreview ? 'Preparing Preview...' : 'Preview One Page'}
-              </button>
-            )}
-          </div>
-        </div>
-
         <div className="checkout-layout">
           <aside className="order-summary">
             <h3>Order Summary</h3>
@@ -158,6 +105,33 @@ function CheckoutPage({
               <span>Total</span>
               <strong>{formatMoney(promoResult ? Math.max(0, cartSummary.totalCents - promoResult.discountCents) : cartSummary.totalCents)}</strong>
             </p>
+
+            {!isPaymentStep && additionalCopyAddon && (
+              <div className="checkout-additional-copy">
+                <div className="checkout-additional-copy-row">
+                  <span className="checkout-additional-copy-label">
+                    <strong>Additional Copy</strong>
+                    <span>{formatMoney(additionalCopyAddon.priceCents)} each</span>
+                  </span>
+                  <div className="addon-qty addon-qty--checkout">
+                    <button
+                      type="button"
+                      onClick={() => onAdditionalCopyQuantityChange(Math.max(0, additionalCopyQuantity - 1))}
+                      aria-label="Remove a copy"
+                    >−</button>
+                    <strong>{additionalCopyQuantity}</strong>
+                    <button
+                      type="button"
+                      onClick={() => onAdditionalCopyQuantityChange(Math.min(additionalCopyAddon.maxQuantity || 6, additionalCopyQuantity + 1))}
+                      aria-label="Add another copy"
+                    >+</button>
+                  </div>
+                </div>
+                {additionalCopyQuantity > 0 && (
+                  <p className="checkout-additional-copy-hint">+{formatMoney(additionalCopyAddon.priceCents * additionalCopyQuantity)} added to your total</p>
+                )}
+              </div>
+            )}
 
             {!isPaymentStep && (
               <div className="promo-code-row">
@@ -252,7 +226,7 @@ function CheckoutPage({
                   onCompletePaidOrder={onCompletePaidOrder}
                   cartSummary={cartSummary}
                   isProcessingPayment={isProcessingPayment}
-                  processingLabel={previewStatusText || undefined}
+
                   paymentError={paymentError}
                 />
               </Elements>
