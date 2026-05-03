@@ -1752,7 +1752,17 @@ app.post('/api/orders/complete', async (req, res) => {
     ]);
 
     const createdAt = new Date().toISOString();
-    const deliveryEstimate = req.body?.deliveryEstimate || '';
+    // Always calculate delivery as 5 business days from now server-side
+    const deliveryEstimate = (() => {
+      const date = new Date();
+      let businessDays = 0;
+      while (businessDays < 5) {
+        date.setDate(date.getDate() + 1);
+        const day = date.getDay();
+        if (day !== 0 && day !== 6) businessDays++;
+      }
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    })();
     const uploadedPhotoCount = originalFiles.filter((name) => name.includes('-original.')).length;
 
     // Attach userId and account email if logged-in user
@@ -1935,26 +1945,25 @@ app.post('/api/orders/complete', async (req, res) => {
       const statusUrl = `${APP_BASE_URL}?order=${orderId}`;
       sendEmail({
         to: customerEmail,
-        subject: `Your Twice Upon Us order is confirmed! (#${orderId})`,
-        text: `Hi ${customerName},\n\nThank you for your order! We've received it and it's now in production.\n\nOrder: #${orderId}\nPages: ${pageCount}\n${totalFormatted ? `Total: ${totalFormatted}\n` : ''}Estimated delivery: ${deliveryEstimate}\n\nTrack your order: ${statusUrl}\n${loyaltyCode ? `\n🎁 As a Premium customer, here's 10% off your next order: ${loyaltyCode}\n` : ''}\nWith love,\nTwice Upon Us`,
+        subject: `Your order is confirmed ♡ (#${orderId})`,
+        text: `Hi ${customerName},\n\nYour custom coloring book is officially in the works ♡\nWe're carefully creating it now and it will ship within 5 business days.\n\nOrder: #${orderId}\nEstimated delivery: ${deliveryEstimate}\n${loyaltyCode ? `\n🎁 As a Premium customer, here's 10% off your next order: ${loyaltyCode}\n` : ''}\nIf you need anything, just reply here or email us anytime.\n\nWith love,\nTwice Upon Us`,
         html: `
-          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1e0e28">
-            <h2 style="color:#7446a0">Your order is confirmed! 🎉</h2>
-            <p>Hi <strong>${customerName}</strong>, thank you for your order. We're thrilled to be creating your custom coloring book!</p>
-            <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px">
-              <tr><td style="padding:8px 0;color:#888">Order number</td><td style="padding:8px 0;font-weight:600">#${orderId}</td></tr>
-              <tr><td style="padding:8px 0;color:#888">Pages</td><td style="padding:8px 0">${pageCount} pages</td></tr>
-              ${totalFormatted ? `<tr><td style="padding:8px 0;color:#888">Total</td><td style="padding:8px 0;font-weight:600">${totalFormatted}</td></tr>` : ''}
-              <tr><td style="padding:8px 0;color:#888">Est. delivery</td><td style="padding:8px 0">${deliveryEstimate}</td></tr>
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1e0e28;padding:32px 24px">
+            <h2 style="color:#7446a0;margin:0 0 8px">Hi ${customerName} ♡</h2>
+            <p style="font-size:16px;line-height:1.6;margin:0 0 24px">Your custom coloring book is officially in the works ♡<br>We're carefully creating it now and it will ship within 5 business days.</p>
+            <table style="width:100%;border-collapse:collapse;margin:0 0 24px;font-size:14px;background:#faf8ff;border-radius:12px;padding:16px">
+              <tr><td style="padding:8px 12px;color:#7c6f8e">Order</td><td style="padding:8px 12px;font-weight:700">#${orderId}</td></tr>
+              <tr><td style="padding:8px 12px;color:#7c6f8e">Estimated delivery</td><td style="padding:8px 12px;font-weight:600">${deliveryEstimate}</td></tr>
+              ${totalFormatted ? `<tr><td style="padding:8px 12px;color:#7c6f8e">Total</td><td style="padding:8px 12px;font-weight:600">${totalFormatted}</td></tr>` : ''}
             </table>
             ${loyaltyCode ? `
-            <div style="background:#f5f0ff;border:1px solid #c4a8f0;border-radius:10px;padding:16px 20px;margin:16px 0">
+            <div style="background:#f5f0ff;border:1px solid #c4a8f0;border-radius:10px;padding:16px 20px;margin:0 0 24px">
               <p style="margin:0 0 6px;font-weight:700;color:#7446a0">🎁 Your Premium loyalty reward</p>
-              <p style="margin:0 0 10px;font-size:14px;color:#4f4255">As a thank-you for choosing Premium, here's 10% off your next order:</p>
+              <p style="margin:0 0 10px;font-size:14px;color:#4f4255">Here's 10% off your next order:</p>
               <p style="margin:0;font-size:22px;font-weight:800;letter-spacing:0.1em;color:#7446a0">${loyaltyCode}</p>
             </div>` : ''}
-            <a href="${statusUrl}" style="display:inline-block;margin:8px 0 24px;padding:12px 24px;background:#7446a0;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Track Your Order</a>
-            <p style="color:#888;font-size:12px">Questions? Reply to this email or contact us at twiceuponus@gmail.com</p>
+            <p style="font-size:14px;color:#4f4255;line-height:1.6">If you need anything, just reply here or email us anytime.</p>
+            <p style="font-size:14px;color:#1e0e28;margin-top:24px">With love,<br><strong>Twice Upon Us</strong></p>
           </div>`,
       }).catch(() => {});
     }
