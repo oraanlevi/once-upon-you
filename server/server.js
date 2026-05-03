@@ -33,12 +33,14 @@ const COLORING_PROMPT_VERSION = 'v2';
 const COLORING_MODEL = 'gpt-image-1';
 const COLORING_SIZE = '1024x1024';
 const COLORING_PROMPT =
-  'Convert this photo into a beautiful black-and-white coloring page illustration. ' +
-  'Preserve the subject\'s likeness, facial features, and distinctive details with precision. ' +
-  'Use clean, flowing line art — confident strokes that define shapes clearly without cross-hatching or gray shading. ' +
-  'The background should be white. Lines should be crisp and dark. ' +
-  'Style: fine illustration suitable for an adult keepsake coloring book — detailed enough to feel personal, ' +
-  'clean enough to color easily. Think hand-drawn portrait illustration, not cartoon.';
+  'Create a black and white coloring book page based on the uploaded image. ' +
+  'The result must stay as close as possible to the original image in composition, subject, pose, objects, and layout. Do not reinterpret or redesign — translate it into clean line art. ' +
+  'STYLE: modern luxury lifestyle illustration, clean, editorial, minimal but detailed. Quiet luxury, feminine, elevated aesthetic. Similar feel to a high-end lifestyle coloring book (travel, fashion, cafe, work, city moments). Slightly stylized but still realistic and recognizable. ' +
+  'LINE STYLE: bold clean outer outlines, thinner interior detail lines, smooth confident linework with no sketchiness, large open white spaces for coloring, balanced detail that is not too busy and not too empty. ' +
+  'SIMPLIFICATION: remove unnecessary clutter, keep only key elements that define the scene, backgrounds should be simplified but still aesthetic such as windows, palm trees, and interiors. ' +
+  'TEXT RULES - VERY IMPORTANT: never include any words, letters, numbers, logos, or readable text. If the image contains text, logos, labels, or branding, replace with blank shapes or minimal line indications. Do not attempt to recreate or spell anything. No captions, no signage, no branding, no watermarks. ' +
+  'ACCURACY: preserve the original subject and scene exactly. Do not change outfits, objects, or setting. Do not add new elements that were not in the image. ' +
+  'OUTPUT: crisp black line art only, pure white background, printable coloring page, polished and cohesive with a luxury lifestyle coloring book.';
 const CACHE_EVENT_LIMIT = 50;
 
 const cacheStats = {
