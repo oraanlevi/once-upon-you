@@ -152,6 +152,11 @@ function OrderRow({ order, token, onStatusChange }) {
               <div>
                 <p style={styles.expandedLabel}>Product</p>
                 <p style={styles.expandedValue}>{order.product?.name || '—'}</p>
+                {order.product?.id === 'premium-keepsake-book' && (
+                  <p style={{ marginTop: 6, fontSize: 12, fontWeight: 600, color: '#92400e', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 8, padding: '5px 10px' }}>
+                    ⭐ Reminder: send this customer a 10% off promo code for their next order.
+                  </p>
+                )}
               </div>
               <div>
                 <p style={styles.expandedLabel}>Shipping Address</p>
