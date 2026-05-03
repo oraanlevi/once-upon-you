@@ -1351,46 +1351,20 @@ function App() {
     setIsProcessingPayment(true);
 
     try {
-      // 1. Show success immediately — don't make customer wait.
+      // 1. Save order + send email immediately after payment — do not wait for generation.
+      const orderResult = await finalizeOrderForFulfillment(paymentIntentId);
+
+      // 2. Show success page.
       setOrderInfo({
-        number: `TUU-${Math.floor(100000 + Math.random() * 900000)}`,
-        deliveryEstimate: deliveryEstimateRef.current,
+        number: orderResult?.orderId || `TUU-${Math.floor(100000 + Math.random() * 900000)}`,
+        deliveryEstimate: orderResult?.deliveryEstimate || deliveryEstimateRef.current,
         createdAt: new Date().toISOString(),
         status: 'new',
       });
       setCurrentStep('success');
       setIsProcessingPayment(false);
 
-      // 2. Silently generate all remaining pages in the background.
-      const snapshotUploaded = uploadedImagesRef.current;
-      const snapshotGenerated = [...generatedImages];
-      const total = snapshotUploaded.length;
-
-      for (let i = 0; i < total; i += 1) {
-        const uploaded = snapshotUploaded[i];
-        const alreadyGenerated = snapshotGenerated[i];
-        if (!uploaded || alreadyGenerated) continue;
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          await requestColoringPage(uploaded, {
-            sessionId,
-            pageIndex: i,
-            sourceFile: uploadedSourceFilesRef.current[i],
-          });
-        } catch {
-          // silently skip failed pages
-        }
-      }
-
-      // 3. Finalize order — all generated files are now on the server.
-      const orderResult = await finalizeOrderForFulfillment(paymentIntentId);
-      if (orderResult?.orderId) {
-        setOrderInfo((prev) => ({
-          ...prev,
-          number: orderResult.orderId,
-          deliveryEstimate: orderResult.deliveryEstimate || prev.deliveryEstimate,
-        }));
-      }
+      // 3. Generation is handled manually — no background generation needed.
     } catch (error) {
       setPaymentError(error?.message || 'Unable to complete your order after payment.');
       throw error;
