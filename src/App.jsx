@@ -1321,6 +1321,15 @@ function App() {
   };
 
   const handleContinueToPayment = () => {
+    const { firstName, lastName, email, address, city, postalCode, country } = shippingData;
+    if (!firstName || !lastName || !email || !address || !city || !postalCode || !country) {
+      setPaymentError('Please fill in all shipping fields before continuing.');
+      return;
+    }
+    if (!email.includes('@') || !email.includes('.') || email.indexOf('@') === 0 || email.endsWith('.')) {
+      setPaymentError('Please enter a valid email address.');
+      return;
+    }
     setPaymentError('');
     setPaymentSetupError('');
     setCurrentStep('payment');

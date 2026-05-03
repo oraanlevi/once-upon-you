@@ -3239,6 +3239,13 @@ button.top-progress-chip {
   text-transform: uppercase;
 }
 
+.checkout-validation-error {
+  color: #c0392b;
+  font-size: 13px;
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+
 .corp-error {
   color: #c0392b;
   font-size: 13px;

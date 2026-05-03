@@ -250,6 +250,9 @@ function CheckoutPage({
                   ))}
                 </div>
                 <div className="checkout-actions">
+                  {paymentError && (
+                    <p className="checkout-validation-error">{paymentError}</p>
+                  )}
                   <button
                     type="button"
                     className="create-book-button payment-button"
