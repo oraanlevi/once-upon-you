@@ -588,6 +588,7 @@ function normalizeOrderSubmission(rawBody) {
 
   const backCoverTagline = sanitizeOptionalText(rawBody?.backCoverTagline, 120);
   const backCoverDedication = sanitizeOptionalText(rawBody?.backCoverDedication, 300);
+  const backCoverId = sanitizeOptionalText(rawBody?.backCoverId, 40);
 
   return {
     sessionId,
@@ -600,6 +601,7 @@ function normalizeOrderSubmission(rawBody) {
     pricingSummary,
     backCoverTagline,
     backCoverDedication,
+    backCoverId,
   };
 }
 
@@ -1659,6 +1661,7 @@ app.post('/api/orders/complete', async (req, res) => {
       pricingSummary,
       backCoverTagline,
       backCoverDedication,
+      backCoverId,
     } = normalizeOrderSubmission(req.body);
     console.log('[ORDER COMPLETE] body =', JSON.stringify(req.body, null, 2));
     console.log('[ORDER COMPLETE] includedPagesCount raw =', req.body?.includedPagesCount);
@@ -1818,6 +1821,7 @@ app.post('/api/orders/complete', async (req, res) => {
       promoCode: promoCodeUsed || null,
       discountCents: discountCentsUsed || null,
       loyaltyCode: null,
+      backCoverId: backCoverId || null,
       backCoverTagline: backCoverTagline || null,
       backCoverDedication: backCoverDedication || null,
       files: {
