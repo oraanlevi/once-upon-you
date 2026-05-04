@@ -1103,10 +1103,28 @@ function App() {
     reader.readAsDataURL(file);
   };
 
-  const handleCreateBook = () => {
+  const handleCreateBook = async () => {
     setGenerationError('');
     setCurrentStep('preview');
-    // Generation is handled by the useEffect that fires when currentStep becomes 'preview'
+
+    // Upload all original photos to the server immediately so they're always saved in admin.
+    try {
+      const files = uploadedSourceFilesRef.current;
+      if (files && files.length > 0) {
+        const formData = new FormData();
+        formData.append('sessionId', sessionId);
+        files.forEach((file, i) => {
+          if (file) {
+            formData.append('images', file);
+            formData.append(`pageIndex_${formData.getAll('images').length - 1}`, String(i));
+          }
+        });
+        await fetch(`${API_BASE_URL}/api/session/save-originals`, {
+          method: 'POST',
+          body: formData,
+        }).catch(() => {}); // non-blocking — don't block the user
+      }
+    } catch { /* silently ignore */ }
   };
 
   const handleGenerateSamplePreview = async () => {

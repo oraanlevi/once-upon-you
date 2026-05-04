@@ -1104,6 +1104,58 @@ const handleCreatePaymentIntent = async (req, res) => {
 app.post('/api/create-payment-intent', handleCreatePaymentIntent);
 app.post('/api/payments/create-intent', handleCreatePaymentIntent);
 
+// Save original photos to session without generating — called before checkout
+app.post('/api/session/save-originals', upload.array('images', 30), async (req, res) => {
+  try {
+    const sessionId = sanitizeSessionId(req.body?.sessionId);
+    if (!sessionId) {
+      res.status(400).json({ error: 'sessionId is required.' });
+      return;
+    }
+    if (!req.files?.length) {
+      res.status(400).json({ error: 'No images provided.' });
+      return;
+    }
+
+    const sessionRoot = path.join(GENERATED_ORDERS_ROOT, `session-${sessionId}`);
+    const originalsDir = path.join(sessionRoot, 'originals');
+    await fs.mkdir(originalsDir, { recursive: true });
+
+    await Promise.all(req.files.map(async (file, i) => {
+      const pageIndex = Number(req.body?.[`pageIndex_${i}`] ?? i);
+      const pageBaseName = getPageBaseName(pageIndex);
+
+      let imageBuffer = file.buffer;
+      let imageMimeType = file.mimetype;
+
+      if (isHeicFile(file)) {
+        try {
+          const converted = await heicConvert({ buffer: imageBuffer, format: 'JPEG', quality: 0.9 });
+          imageBuffer = Buffer.from(converted);
+          imageMimeType = 'image/jpeg';
+        } catch { /* skip conversion, save as-is */ }
+      }
+
+      if (imageMimeType !== 'image/png') {
+        try {
+          imageBuffer = await sharp(imageBuffer).png().toBuffer();
+          imageMimeType = 'image/png';
+        } catch { /* skip conversion */ }
+      }
+
+      const ext = getExtensionForMimeType(imageMimeType);
+      const originalPath = path.join(originalsDir, `${pageBaseName}-original.${ext}`);
+      await fs.writeFile(originalPath, imageBuffer);
+    }));
+
+    console.log('[SAVE-ORIGINALS] Saved', req.files.length, 'originals for session', sessionId);
+    res.json({ saved: req.files.length });
+  } catch (err) {
+    console.error('[SAVE-ORIGINALS] Error:', err.message);
+    res.status(500).json({ error: 'Failed to save originals.' });
+  }
+});
+
 app.post('/api/coloring-page', upload.single('image'), async (req, res) => {
   let cacheLogContext = null;
 
