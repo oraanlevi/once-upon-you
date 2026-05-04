@@ -2676,6 +2676,17 @@ app.patch('/api/admin/orders/:orderId/status', requireAdmin, express.json(), asy
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Twice Upon Us backend listening on http://localhost:${port}`);
+  console.log('[STARTUP] SERVER_ROOT:', SERVER_ROOT);
+  console.log('[STARTUP] DATA_ROOT:', DATA_ROOT);
+  console.log('[STARTUP] ORDERS_ROOT:', ORDERS_ROOT);
+  try {
+    await fs.mkdir(ORDERS_ROOT, { recursive: true });
+    const entries = await fs.readdir(ORDERS_ROOT, { withFileTypes: true });
+    const orderDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+    console.log('[STARTUP] Orders on disk:', orderDirs.length, orderDirs);
+  } catch (e) {
+    console.error('[STARTUP] Error reading orders dir:', e.message);
+  }
 });
