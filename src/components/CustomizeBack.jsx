@@ -8,11 +8,11 @@ const COVER_GALLERY = [
 ];
 
 const BACK_COVERS = [
-  { id: 'classic',   label: 'Classic',   badge: '⭐ Best Seller', src: '/images/book-back.png' },
-  { id: 'colorful',  label: 'Colorful',  src: '/images/back-colorful.jpg' },
-  { id: 'sky',       label: 'Blue Sky',  src: '/images/back-sky.jpg' },
-  { id: 'kraft',     label: 'Kraft',     src: '/images/back-kraft.jpg' },
-  { id: 'hollywood', label: 'Hollywood', src: '/images/back-hollywood.jpg' },
+  { id: 'classic',  label: 'Classic',  badge: '⭐ Best Seller', src: '/images/back-classic.png' },
+  { id: 'pink',     label: 'Pink',     src: '/images/back-pink.png' },
+  { id: 'ocean',    label: 'Ocean',    src: '/images/back-ocean.png' },
+  { id: 'orange',   label: 'Orange',   src: '/images/back-orange.png' },
+  { id: 'midnight', label: 'Midnight', src: '/images/back-midnight.png' },
 ];
 
 function CustomizeBack({ backCoverId, dedication, coverNotes, onBackCoverChange, onDedicationChange, onCoverNotesChange, onBack, onContinue }) {
