@@ -90,6 +90,22 @@ function imgSrc(API, orderId, type, file, token) {
   return `${API}/api/admin/orders/${orderId}/image/${type}/${file}?token=${token}`;
 }
 
+async function downloadImage(url, filename) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('fetch failed');
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+  } catch {
+    window.open(url, '_blank');
+  }
+}
+
 function OrderRow({ order, token, onStatusChange }) {
   const [status, setStatus] = useState(order.status || 'new');
   const [saving, setSaving] = useState(false);
@@ -262,24 +278,34 @@ function OrderRow({ order, token, onStatusChange }) {
               <div style={styles.imagesSection}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '16px 0 12px' }}>
                   <p style={{ ...styles.imagesSectionTitle, margin: 0 }}>Pages — Original vs Generated</p>
-                  {order.files.generated?.length > 0 && (
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <button
                       style={{ ...styles.refreshBtn, fontSize: 12 }}
-                      onClick={() => {
-                        (order.files.generated || []).forEach((genPath, i) => {
-                          const genFile = genPath.split('/').pop();
-                          setTimeout(() => {
-                            const a = document.createElement('a');
-                            a.href = `${imgSrc(API, order.orderId, 'generated', genFile, token)}&dl=1`;
-                            a.download = genFile;
-                            a.click();
-                          }, i * 600);
-                        });
+                      onClick={async () => {
+                        for (let i = 0; i < (order.files.originals || []).length; i++) {
+                          const origFile = (order.files.originals[i] || '').split('/').pop();
+                          if (origFile) await downloadImage(imgSrc(API, order.orderId, 'originals', origFile, token), origFile);
+                          await new Promise((r) => setTimeout(r, 400));
+                        }
                       }}
                     >
-                      ↓ Download All Pages
+                      ↓ Download Originals
                     </button>
-                  )}
+                    {order.files.generated?.length > 0 && (
+                      <button
+                        style={{ ...styles.refreshBtn, fontSize: 12 }}
+                        onClick={async () => {
+                          for (let i = 0; i < (order.files.generated || []).length; i++) {
+                            const genFile = (order.files.generated[i] || '').split('/').pop();
+                            if (genFile) await downloadImage(imgSrc(API, order.orderId, 'generated', genFile, token), genFile);
+                            await new Promise((r) => setTimeout(r, 400));
+                          }
+                        }}
+                      >
+                        ↓ Download Generated
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div style={styles.pagesGrid}>
 
@@ -300,6 +326,10 @@ function OrderRow({ order, token, onStatusChange }) {
                               loading="lazy"
                               onClick={() => window.open(imgSrc(API, order.orderId, 'originals', origFile, token), '_blank')}
                             />
+                            <button
+                              style={styles.imgDlBtn}
+                              onClick={() => downloadImage(imgSrc(API, order.orderId, 'originals', origFile, token), origFile)}
+                            >↓ Save</button>
                           </div>
                           {genFile && (
                             <div style={styles.pageImageWrap}>
@@ -311,6 +341,10 @@ function OrderRow({ order, token, onStatusChange }) {
                                 loading="lazy"
                                 onClick={() => window.open(imgSrc(API, order.orderId, 'generated', genFile, token), '_blank')}
                               />
+                              <button
+                                style={styles.imgDlBtn}
+                                onClick={() => downloadImage(imgSrc(API, order.orderId, 'generated', genFile, token), genFile)}
+                              >↓ Save</button>
                             </div>
                           )}
                         </div>
@@ -710,4 +744,5 @@ const styles = {
   pageImageWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
   imageTypeLabel: { margin: 0, fontSize: 10, fontWeight: 600, color: '#7c6f8e', textTransform: 'uppercase', letterSpacing: '0.05em' },
   pageImg: { width: 120, height: 120, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e0f0', cursor: 'pointer', transition: 'opacity 150ms' },
+  imgDlBtn: { marginTop: 4, padding: '3px 10px', borderRadius: 6, border: '1px solid #ddd6fe', background: '#f5f0ff', color: '#5b21b6', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
 };
