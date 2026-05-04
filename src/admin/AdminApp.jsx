@@ -110,6 +110,27 @@ function OrderRow({ order, token, onStatusChange }) {
   const [status, setStatus] = useState(order.status || 'new');
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateMsg, setGenerateMsg] = useState('');
+  const [orderData, setOrderData] = useState(order);
+
+  const triggerGenerate = async () => {
+    setGenerating(true);
+    setGenerateMsg('Starting generation…');
+    try {
+      const res = await fetch(`${API}/api/admin/orders/${order.orderId}/generate`, {
+        method: 'POST',
+        headers: { 'x-admin-token': token },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setGenerateMsg(`${data.message} Refresh in a few minutes to see results.`);
+    } catch (err) {
+      setGenerateMsg(`Error: ${err.message}`);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const updateStatus = async (newStatus) => {
     setSaving(true);
@@ -259,6 +280,20 @@ function OrderRow({ order, token, onStatusChange }) {
                     <span style={styles.promoChipDiscount}>10% off next order</span>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Generate button */}
+            {orderData.files?.originals?.length > 0 && (
+              <div style={{ padding: '0 20px 16px' }}>
+                <button
+                  style={{ ...styles.refreshBtn, background: generating ? '#f5f0ff' : '#7c3aed', color: generating ? '#7c3aed' : '#fff', borderColor: '#7c3aed', fontSize: 13 }}
+                  onClick={triggerGenerate}
+                  disabled={generating}
+                >
+                  {generating ? '⏳ Generating…' : '✦ Generate Coloring Pages'}
+                </button>
+                {generateMsg && <p style={{ margin: '8px 0 0', fontSize: 12, color: '#5b21b6' }}>{generateMsg}</p>}
               </div>
             )}
 

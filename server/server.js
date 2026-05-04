@@ -2674,6 +2674,84 @@ app.patch('/api/admin/orders/:orderId/status', requireAdmin, express.json(), asy
   }
 });
 
+// ─── Admin: trigger generation for an existing order ─────────────────────────
+
+app.post('/api/admin/orders/:orderId/generate', requireAdmin, async (req, res) => {
+  const { orderId } = req.params;
+  const orderDir = path.join(ORDERS_ROOT, orderId);
+  const orderPath = path.join(orderDir, 'order.json');
+
+  let order;
+  try {
+    order = JSON.parse(await fs.readFile(orderPath, 'utf8'));
+  } catch {
+    res.status(404).json({ error: 'Order not found.' });
+    return;
+  }
+
+  const originalsDir = path.join(orderDir, 'originals');
+  const generatedDir = path.join(orderDir, 'generated');
+  await fs.mkdir(generatedDir, { recursive: true });
+
+  const allFiles = await readSortedFiles(originalsDir);
+  const originals = allFiles.filter(isOriginalImageFile);
+
+  if (!originals.length) {
+    res.status(400).json({ error: 'No original images found for this order.' });
+    return;
+  }
+
+  // Respond immediately — generation runs in background
+  res.json({ ok: true, message: `Generating ${originals.length} pages in background…`, total: originals.length });
+
+  let generated = 0;
+  for (const filename of originals) {
+    try {
+      const filePath = path.join(originalsDir, filename);
+      let imageBuffer = await fs.readFile(filePath);
+      const ext = path.extname(filename).toLowerCase().replace('.', '');
+      let imageMimeType = ext === 'png' ? 'image/png' : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/webp';
+
+      // Convert to PNG for OpenAI compatibility
+      if (imageMimeType !== 'image/png') {
+        imageBuffer = await sharp(imageBuffer).png().toBuffer();
+        imageMimeType = 'image/png';
+      }
+
+      const imageFile = await toFile(imageBuffer, filename, { type: imageMimeType });
+      const result = await client.images.edit({
+        model: COLORING_MODEL,
+        image: imageFile,
+        prompt: COLORING_PROMPT,
+        size: COLORING_SIZE,
+      });
+
+      const b64 = result?.data?.[0]?.b64_json;
+      if (b64) {
+        const baseName = filename.replace(/-original\.(jpg|jpeg|png|webp)$/i, '');
+        const outPath = path.join(generatedDir, `${baseName}-generated.png`);
+        await fs.writeFile(outPath, Buffer.from(b64, 'base64'));
+        generated++;
+        console.log(`[ADMIN GENERATE] ${orderId} — page ${generated}/${originals.length} done`);
+      }
+    } catch (e) {
+      console.error(`[ADMIN GENERATE] Failed on ${filename}:`, e.message);
+    }
+  }
+
+  // Update order generationStatus
+  try {
+    const generatedFiles = await readSortedFiles(generatedDir);
+    order.generationStatus = generatedFiles.length >= originals.length ? 'complete' : generatedFiles.length > 0 ? 'partial' : 'pending';
+    order.files = order.files || {};
+    order.files.generated = generatedFiles.map((f) => path.join(generatedDir, f));
+    await fs.writeFile(orderPath, JSON.stringify(order, null, 2));
+    console.log(`[ADMIN GENERATE] ${orderId} — complete. ${generated}/${originals.length} pages generated.`);
+  } catch (e) {
+    console.error(`[ADMIN GENERATE] Failed to update order:`, e.message);
+  }
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 app.listen(port, async () => {
