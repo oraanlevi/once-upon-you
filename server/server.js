@@ -1775,12 +1775,7 @@ app.post('/api/orders/complete', async (req, res) => {
     ]);
     const originalFiles = originalFilesRaw.filter(isOriginalImageFile);
 
-    if (!originalFiles.length) {
-      res.status(400).json({
-        error: 'No original uploads found for this session.',
-      });
-      return;
-    }
+    console.log('[ORDER COMPLETE] originals found:', originalFiles.length, '| generated found:', generatedFiles.length);
 
     const orderId = createOrderId();
     const orderRoot = path.join(ORDERS_ROOT, orderId);
@@ -1792,18 +1787,19 @@ app.post('/api/orders/complete', async (req, res) => {
       await fs.mkdir(orderGenerated, { recursive: true });
     }
 
+    // Copy whatever files exist — order always saves even if originals/generated are missing
     await Promise.all([
       ...originalFiles.map((filename) =>
         fs.copyFile(
           path.join(sessionOriginals, filename),
           path.join(orderOriginals, filename),
-        ),
+        ).catch((e) => console.warn('[ORDER COMPLETE] Failed to copy original:', filename, e.message)),
       ),
       ...generatedFiles.map((filename) =>
         fs.copyFile(
           path.join(sessionGenerated, filename),
           path.join(orderGenerated, filename),
-        ),
+        ).catch((e) => console.warn('[ORDER COMPLETE] Failed to copy generated:', filename, e.message)),
       ),
     ]);
 
@@ -1974,6 +1970,7 @@ app.post('/api/orders/complete', async (req, res) => {
     }
 
     // Send admin alert email
+    console.log('[ORDER COMPLETE] Sending admin alert to:', ADMIN_EMAIL || '(not configured)');
     if (ADMIN_EMAIL) {
       sendEmail({
         to: ADMIN_EMAIL,
@@ -1992,11 +1989,12 @@ app.post('/api/orders/complete', async (req, res) => {
           </table>
           <a href="${APP_BASE_URL}/admin.html" style="display:inline-block;margin-top:16px;padding:10px 20px;background:#7446a0;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">View in Admin</a>
         </div>`,
-      }).catch(() => {});
+      }).catch((e) => console.error('[EMAIL] Admin alert failed:', e.message));
     }
 
     // Send confirmation email
     const customerEmail = shipping.email || accountEmail;
+    console.log('[ORDER COMPLETE] Sending confirmation to customer:', customerEmail || '(no email)');
     if (customerEmail) {
       const customerName = shipping.firstName || 'there';
       const totalFormatted = pricingSummary.totalCents
@@ -2025,7 +2023,7 @@ app.post('/api/orders/complete', async (req, res) => {
             <p style="font-size:14px;color:#4f4255;line-height:1.6">If you need anything, just reply here or email us anytime.</p>
             <p style="font-size:14px;color:#1e0e28;margin-top:24px">With love,<br><strong>Twice Upon Us</strong></p>
           </div>`,
-      }).catch(() => {});
+      }).catch((e) => console.error('[EMAIL] Customer confirmation failed:', e.message));
     }
 
     res.status(201).json({
