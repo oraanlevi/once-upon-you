@@ -566,10 +566,23 @@ button.top-progress-chip {
 .processing-step,
 .preview-step,
 .checkout-step,
-.order-success-step,
 .generating-step {
   width: 100%;
   display: block;
+}
+
+.order-success-step {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 32px 0;
+}
+
+.order-success-card {
+  max-width: 560px !important;
+  text-align: center;
 }
 
 .upload-step {
