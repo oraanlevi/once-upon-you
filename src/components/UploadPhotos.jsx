@@ -40,7 +40,7 @@ function UploadPhotos({
           <p className="builder-eyebrow">Step 2 of 3</p>
           <h2 id="upload-step-title">Upload your photos</h2>
           <p className="builder-lede upload-intro">
-            Each photo becomes its own coloring page — clear, well-lit shots work best.
+            Each photo becomes its own coloring page.
           </p>
         </div>
 
