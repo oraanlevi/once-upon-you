@@ -11,7 +11,7 @@ const BACK_COVERS = [
   { id: 'classic',  label: 'Classic',  badge: '⭐ Best Seller', src: '/images/back-classic.png' },
   { id: 'pink',     label: 'Pink',     src: '/images/back-pink.png' },
   { id: 'ocean',    label: 'Ocean',    src: '/images/back-ocean.png' },
-  { id: 'orange',   label: 'Orange',   src: '/images/back-orange.png' },
+  { id: 'white',    label: 'White',    src: '/images/back-white.png' },
   { id: 'midnight', label: 'Midnight', src: '/images/back-midnight.png' },
 ];
 
