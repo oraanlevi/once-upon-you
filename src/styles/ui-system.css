@@ -672,7 +672,6 @@ button.top-progress-chip {
 }
 
 .builder-lede,
-.upload-progress,
 .preview-note,
 .processing-copy {
   color: var(--text-secondary);
@@ -1638,41 +1637,94 @@ button.top-progress-chip {
   border-top: 1px solid var(--border-soft);
 }
 
-/* ─── Bulk upload row ─── */
-.upload-bulk-row {
+/* ─── Bulk upload drop zone ─── */
+.upload-drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 28px 20px;
+  margin-bottom: 18px;
+  border: 2px dashed rgba(116, 70, 149, 0.28);
+  border-radius: 16px;
+  background: rgba(116, 70, 149, 0.03);
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.14s;
+  font-family: inherit;
+}
+
+.upload-drop-zone:hover {
+  background: rgba(116, 70, 149, 0.07);
+  border-color: rgba(116, 70, 149, 0.5);
+  transform: translateY(-1px);
+}
+
+.upload-drop-zone-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.upload-drop-zone-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ui-primary);
+  letter-spacing: -0.01em;
+}
+
+.upload-drop-zone-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ─── Progress bar ─── */
+.upload-progress-bar-wrap {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 0 0 20px 0;
-  flex-wrap: wrap;
+  margin-bottom: 18px;
 }
 
-.upload-bulk-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--surface-2, #f5f5f5);
-  border: 2px dashed var(--border-soft, #ddd);
-  border-radius: 10px;
-  font-size: 15px;
+.upload-progress-bar-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(116, 70, 149, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.upload-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ui-primary), #a06dd4);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+.upload-progress-bar-label {
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary, #111);
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-  width: 100%;
-  justify-content: center;
+  color: var(--ui-primary);
+  white-space: nowrap;
 }
 
-.upload-bulk-btn:hover {
-  background: var(--surface-3, #eee);
-  border-color: var(--accent, #7c5cbf);
-  color: var(--accent, #7c5cbf);
+/* ─── Slots divider label ─── */
+.upload-slots-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 14px;
 }
 
-.upload-bulk-hint {
+/* ─── Remaining note ─── */
+.upload-remaining-note {
   font-size: 13px;
-  color: var(--text-secondary, #777);
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 10px;
 }
 
 /* ─── Checkout layout ─── */
@@ -2430,46 +2482,7 @@ button.top-progress-chip {
 
 /* ─── Upload Guidance ────────────────────────────────────────────── */
 
-.upload-guidance {
-  background: rgba(116, 70, 149, 0.05);
-  border: 1px solid rgba(116, 70, 149, 0.12);
-  border-radius: 12px;
-  padding: 14px 16px;
-  margin-top: 4px;
-}
-
-.upload-guidance-title {
-  font-size: 12.5px;
-  font-weight: 650;
-  color: var(--ui-primary);
-  margin-bottom: 10px;
-  letter-spacing: 0.01em;
-}
-
-.upload-guidance-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 16px;
-}
-
-.upload-guidance-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  font-size: 12px;
-  color: rgba(79, 66, 85, 0.8);
-  line-height: 1.4;
-}
-
-.guidance-icon {
-  flex-shrink: 0;
-  font-weight: 700;
-  font-size: 11px;
-  margin-top: 1px;
-}
-
-.upload-guidance-item--good .guidance-icon { color: #2e7d32; }
-.upload-guidance-item--bad .guidance-icon { color: #c0392b; }
+/* upload-guidance removed — replaced by drop zone + inline tip */
 
 /* ─── Forgot Password Link ───────────────────────────────────────── */
 
