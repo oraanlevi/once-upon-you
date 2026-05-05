@@ -1,4 +1,15 @@
+import { useRef } from 'react';
 import UploadCard from './UploadCard';
+
+const ACCEPTED_UPLOAD_TYPES =
+  '.jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif';
+
+function isSupportedUploadFile(file) {
+  if (!(file instanceof File)) return false;
+  if (file.type.startsWith('image/')) return true;
+  const ext = file.name.toLowerCase().match(/(\.[a-z0-9]+)$/)?.[1] || '';
+  return ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'].includes(ext);
+}
 
 function UploadPhotos({
   pageCount,
@@ -8,8 +19,15 @@ function UploadPhotos({
   onCreateBook,
   generationError,
 }) {
+  const bulkInputRef = useRef(null);
   const uploadedCount = uploads.filter(Boolean).length;
   const allUploaded = uploadedCount === pageCount;
+
+  const handleBulkSelect = (e) => {
+    const files = Array.from(e.target.files || []).filter(isSupportedUploadFile);
+    files.slice(0, pageCount).forEach((file, i) => onUpload(i, file));
+    e.target.value = '';
+  };
 
   return (
     <section className="upload-step" aria-labelledby="upload-step-title">
@@ -56,6 +74,27 @@ function UploadPhotos({
             {uploadedCount} of {pageCount} pages have a photo ready
           </p>
           {generationError ? <p className="generation-error">{generationError}</p> : null}
+        </div>
+
+        <div className="upload-bulk-row">
+          <input
+            ref={bulkInputRef}
+            type="file"
+            accept={ACCEPTED_UPLOAD_TYPES}
+            multiple
+            className="upload-input"
+            onChange={handleBulkSelect}
+          />
+          <button
+            type="button"
+            className="upload-bulk-btn"
+            onClick={() => bulkInputRef.current?.click()}
+          >
+            📂 Select all {pageCount} photos at once
+          </button>
+          {uploadedCount > 0 && (
+            <span className="upload-bulk-hint">{uploadedCount} of {pageCount} filled</span>
+          )}
         </div>
 
         <div className="upload-grid upload-grid--focused">

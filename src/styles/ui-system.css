@@ -1638,6 +1638,43 @@ button.top-progress-chip {
   border-top: 1px solid var(--border-soft);
 }
 
+/* ─── Bulk upload row ─── */
+.upload-bulk-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px 0;
+  flex-wrap: wrap;
+}
+
+.upload-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--surface-2, #f5f5f5);
+  border: 2px dashed var(--border-soft, #ddd);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #111);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  width: 100%;
+  justify-content: center;
+}
+
+.upload-bulk-btn:hover {
+  background: var(--surface-3, #eee);
+  border-color: var(--accent, #7c5cbf);
+  color: var(--accent, #7c5cbf);
+}
+
+.upload-bulk-hint {
+  font-size: 13px;
+  color: var(--text-secondary, #777);
+}
+
 /* ─── Checkout layout ─── */
 
 .checkout-layout {
