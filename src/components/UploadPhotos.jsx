@@ -26,6 +26,9 @@ function UploadPhotos({
 
   const handleBulkSelect = (e) => {
     const files = Array.from(e.target.files || []).filter(isSupportedUploadFile);
+    if (files.length > pageCount) {
+      alert(`You selected ${files.length} photos but only need ${pageCount}. We'll use the first ${pageCount}.`);
+    }
     files.slice(0, pageCount).forEach((file, i) => onUpload(i, file));
     e.target.value = '';
   };
