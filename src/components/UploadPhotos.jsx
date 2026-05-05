@@ -58,7 +58,6 @@ function UploadPhotos({
           className="upload-drop-zone"
           onClick={() => bulkInputRef.current?.click()}
         >
-          <span className="upload-drop-zone-icon">🖼️</span>
           <span className="upload-drop-zone-label">
             {uploadedCount === 0
               ? `Choose all ${pageCount} photos at once`
