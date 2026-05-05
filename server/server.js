@@ -678,6 +678,7 @@ async function validateOrderSubmission({ pageCount, selectedProduct, selectedAdd
     throw new Error('Add-on totals do not match pricing summary.');
   }
 
+  console.log('[VALIDATE] totalCents:', pricingSummary.totalCents, '| productSubtotal:', pricingSummary.productSubtotalCents, '| addOnsTotal:', pricingSummary.addOnsTotalCents, '| sum:', pricingSummary.productSubtotalCents + pricingSummary.addOnsTotalCents);
   if (pricingSummary.totalCents !== pricingSummary.productSubtotalCents + pricingSummary.addOnsTotalCents) {
     throw new Error('pricingSummary.totalCents is invalid.');
   }
