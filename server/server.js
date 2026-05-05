@@ -1043,6 +1043,11 @@ const handleCreatePaymentIntent = async (req, res) => {
     const orderSubmission = normalizeOrderSubmission(req.body);
     await validateOrderSubmission(orderSubmission);
 
+    if (!orderSubmission.pricingSummary.totalCents || orderSubmission.pricingSummary.totalCents < 50) {
+      res.status(400).json({ error: 'Order total is invalid. Please refresh the page and try again.' });
+      return;
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: orderSubmission.pricingSummary.totalCents,
       currency: STRIPE_CURRENCY,
