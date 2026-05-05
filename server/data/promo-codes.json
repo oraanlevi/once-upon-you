@@ -21,6 +21,17 @@
       "usedCount": 0,
       "expiresAt": null,
       "description": "$5 off any order"
+    },
+    {
+      "id": "TEST99",
+      "code": "TEST99",
+      "type": "fixed",
+      "value": 4000,
+      "active": true,
+      "maxUses": 20,
+      "usedCount": 0,
+      "expiresAt": null,
+      "description": "$40 off — internal test code"
     }
   ]
 }
