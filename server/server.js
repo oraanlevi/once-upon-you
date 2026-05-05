@@ -1043,13 +1043,17 @@ const handleCreatePaymentIntent = async (req, res) => {
     const orderSubmission = normalizeOrderSubmission(req.body);
     await validateOrderSubmission(orderSubmission);
 
-    if (!orderSubmission.pricingSummary.totalCents || orderSubmission.pricingSummary.totalCents < 50) {
+    // Apply promo discount to get the actual charge amount
+    const discountCents = Number.isFinite(req.body?.discountCents) ? Math.max(0, Math.round(req.body.discountCents)) : 0;
+    const chargeAmountCents = Math.max(50, orderSubmission.pricingSummary.totalCents - discountCents);
+
+    if (!chargeAmountCents || chargeAmountCents < 50) {
       res.status(400).json({ error: 'Order total is invalid. Please refresh the page and try again.' });
       return;
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: orderSubmission.pricingSummary.totalCents,
+      amount: chargeAmountCents,
       currency: STRIPE_CURRENCY,
       automatic_payment_methods: {
         enabled: true,

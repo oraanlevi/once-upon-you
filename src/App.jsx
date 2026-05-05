@@ -1219,7 +1219,7 @@ function App() {
         compareAtPriceCents: cartSummary.compareAtPriceCents,
         addOnsTotalCents: cartSummary.addOnsTotalCents,
         savingsCents: cartSummary.savingsCents,
-        totalCents: effectiveTotalCents,
+        totalCents: cartSummary.totalCents,
       },
       paymentIntentId,
       checkoutSessionId,
