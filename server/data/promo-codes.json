@@ -26,12 +26,12 @@
       "id": "TEST99",
       "code": "TEST99",
       "type": "fixed",
-      "value": 5300,
+      "value": 5600,
       "active": true,
       "maxUses": 20,
       "usedCount": 0,
       "expiresAt": null,
-      "description": "$40 off — internal test code"
+      "description": "$56 off — internal test code"
     }
   ]
 }
