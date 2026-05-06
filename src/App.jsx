@@ -1321,6 +1321,7 @@ function App() {
     selectedPageCount,
     cartSummary.selectedPageCount,
     cartSummary.totalCents,
+    promoResult?.code,
     cartSummary.addOnsTotalCents,
   ]);
 
