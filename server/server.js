@@ -1044,10 +1044,23 @@ const handleCreatePaymentIntent = async (req, res) => {
     const orderSubmission = normalizeOrderSubmission(req.body);
     await validateOrderSubmission(orderSubmission);
 
-    // Apply promo discount to get the actual charge amount
-    const discountCents = Number.isFinite(req.body?.discountCents) ? Math.max(0, Math.round(req.body.discountCents)) : 0;
+    // Apply promo discount server-side (re-validate the code, don't trust client amount)
+    let discountCents = 0;
+    const promoCodeRaw = sanitizeOptionalText(req.body?.promoCode, 40);
+    if (promoCodeRaw) {
+      try {
+        const codes = await readPromoCodes();
+        const promo = codes.find((c) => c.code.toUpperCase() === promoCodeRaw.toUpperCase());
+        if (promo && promo.active) {
+          const result = applyPromoDiscount(orderSubmission.pricingSummary.totalCents, promo);
+          discountCents = result.discountCents;
+        }
+      } catch (e) {
+        console.warn('[PAYMENT INTENT] Failed to look up promo code:', e?.message);
+      }
+    }
     const chargeAmountCents = Math.max(50, orderSubmission.pricingSummary.totalCents - discountCents);
-    console.log('[PAYMENT INTENT] totalCents:', orderSubmission.pricingSummary.totalCents, '| discountCents:', discountCents, '| chargeAmountCents:', chargeAmountCents);
+    console.log('[PAYMENT INTENT] totalCents:', orderSubmission.pricingSummary.totalCents, '| promoCode:', promoCodeRaw, '| discountCents:', discountCents, '| chargeAmountCents:', chargeAmountCents);
 
     if (!chargeAmountCents || chargeAmountCents < 50) {
       res.status(400).json({ error: 'Order total is invalid. Please refresh the page and try again.' });
