@@ -1045,6 +1045,7 @@ const handleCreatePaymentIntent = async (req, res) => {
     await validateOrderSubmission(orderSubmission);
 
     // Apply promo discount server-side (re-validate the code, don't trust client amount)
+    console.log('[PAYMENT INTENT] raw promoCode from body:', JSON.stringify(req.body?.promoCode), '| raw discountCents:', JSON.stringify(req.body?.discountCents));
     let discountCents = 0;
     const promoCodeRaw = sanitizeOptionalText(req.body?.promoCode, 40);
     if (promoCodeRaw) {
