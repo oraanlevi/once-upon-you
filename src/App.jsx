@@ -1224,7 +1224,7 @@ function App() {
       },
       paymentIntentId,
       checkoutSessionId,
-      promoCode: promoResultRef.current?.code || '',
+      promoCode: promoCode.trim() || promoResultRef.current?.code || '',
       discountCents: promoResultRef.current?.discountCents || 0,
       backCoverId,
       backCoverDedication,
@@ -1323,6 +1323,7 @@ function App() {
     cartSummary.selectedPageCount,
     cartSummary.totalCents,
     promoResult?.code,
+    promoCode,
     cartSummary.addOnsTotalCents,
   ]);
 
