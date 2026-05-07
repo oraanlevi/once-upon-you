@@ -2794,4 +2794,12 @@ app.listen(port, async () => {
   } catch (e) {
     console.error('[STARTUP] Error reading orders dir:', e.message);
   }
+  try {
+    const promoRaw = await fs.readFile(PROMO_CODES_PATH, 'utf8');
+    const promoParsed = JSON.parse(promoRaw);
+    const codes = Array.isArray(promoParsed.codes) ? promoParsed.codes : [];
+    console.log('[STARTUP] Promo codes file found:', PROMO_CODES_PATH, '| codes:', codes.map(c => c.code));
+  } catch (e) {
+    console.error('[STARTUP] Promo codes file MISSING or unreadable:', PROMO_CODES_PATH, e.message);
+  }
 });
