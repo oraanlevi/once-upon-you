@@ -1270,6 +1270,7 @@ function App() {
           throw new Error('Stripe did not return a client secret.');
         }
 
+        console.log('[PAYMENT INTENT] Server returned amount:', responseBody.amount, 'cents = $' + (responseBody.amount / 100).toFixed(2));
         setPaymentClientSecret(responseBody.clientSecret);
       } catch (error) {
         if (!isCancelled) {
