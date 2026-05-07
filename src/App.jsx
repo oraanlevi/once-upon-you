@@ -1210,8 +1210,20 @@ function App() {
     return response.json();
   };
 
+  // Track whether we've already kicked off a PI for the current payment-step visit.
+  // This prevents multiple re-runs of the effect (caused by unrelated dep changes)
+  // from creating multiple payment intents and overwriting the correct one.
+  const paymentIntentStartedRef = useRef(false);
+
   useEffect(() => {
     if (currentStep !== 'payment') {
+      // Reset so next visit to payment step creates a fresh PI.
+      paymentIntentStartedRef.current = false;
+      return;
+    }
+
+    // Only ever create ONE payment intent per payment-step visit.
+    if (paymentIntentStartedRef.current) {
       return;
     }
 
@@ -1227,6 +1239,7 @@ function App() {
       return;
     }
 
+    paymentIntentStartedRef.current = true;
     let isCancelled = false;
 
     const preparePaymentIntent = async () => {
@@ -1235,14 +1248,12 @@ function App() {
         setIsPreparingPayment(true);
         setPaymentClientSecret('');
         const payload = buildOrderPayload();
-        // Always read promoCode directly from ref at call time — avoids stale closure
+        // Read promo from ref at call time — always has the latest value.
         payload.promoCode = promoResultRef.current?.code || payload.promoCode || '';
         console.log('[PAYMENT INTENT] promoResultRef.current:', promoResultRef.current, '| payload.promoCode:', payload.promoCode);
         const response = await fetch(CREATE_PAYMENT_INTENT_API_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
         const responseBody = await response.json().catch(() => ({}));
@@ -1262,6 +1273,7 @@ function App() {
         setPaymentClientSecret(responseBody.clientSecret);
       } catch (error) {
         if (!isCancelled) {
+          paymentIntentStartedRef.current = false; // Allow retry on error.
           setPaymentSetupError(error?.message || 'Unable to prepare secure payment.');
         }
       } finally {
@@ -1276,17 +1288,7 @@ function App() {
     return () => {
       isCancelled = true;
     };
-  }, [
-    currentStep,
-    selectedProduct?.id,
-    sessionId,
-    selectedPageCount,
-    cartSummary.selectedPageCount,
-    cartSummary.totalCents,
-    promoResult?.code,
-    promoCode,
-    cartSummary.addOnsTotalCents,
-  ]);
+  }, [currentStep, selectedProduct?.id]);
 
   const handleValidatePromo = async (code) => {
     if (!code.trim()) return;
