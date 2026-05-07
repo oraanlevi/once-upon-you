@@ -67,7 +67,7 @@ function CheckoutPage({
       <div className="checkout-shell checkout-shell--focused">
         <div className="checkout-top checkout-top--focused">
           <button type="button" className="upload-back" onClick={onBack}>
-            {backLabel || 'Back'}
+            ← {backLabel || 'Back'}
           </button>
           <p className="builder-eyebrow">Chapter 5</p>
           <h2 id="checkout-title">{isPaymentStep ? 'Complete payment.' : 'Checkout details.'}</h2>
@@ -76,6 +76,11 @@ function CheckoutPage({
               ? 'Review your payment details and pay securely with Stripe.'
               : 'Review your order and enter shipping information before payment.'}
           </p>
+          {isPaymentStep && (
+            <button type="button" className="checkout-edit-address-btn" onClick={onBack}>
+              Edit shipping address
+            </button>
+          )}
         </div>
 
         <div className="checkout-layout">
