@@ -1051,13 +1051,15 @@ const handleCreatePaymentIntent = async (req, res) => {
     if (promoCodeRaw) {
       try {
         const codes = await readPromoCodes();
+        console.log('[PAYMENT INTENT] promoCodeRaw:', promoCodeRaw, '| codes loaded:', codes.length, '| codes:', JSON.stringify(codes.map(c => c.code)));
         const promo = codes.find((c) => c.code.toUpperCase() === promoCodeRaw.toUpperCase());
+        console.log('[PAYMENT INTENT] matched promo:', promo ? JSON.stringify({ code: promo.code, active: promo.active, type: promo.type, value: promo.value }) : 'none');
         if (promo && promo.active) {
           const result = applyPromoDiscount(orderSubmission.pricingSummary.totalCents, promo);
           discountCents = result.discountCents;
         }
       } catch (e) {
-        console.warn('[PAYMENT INTENT] Failed to look up promo code:', e?.message);
+        console.warn('[PAYMENT INTENT] Failed to look up promo code:', e?.message, e?.stack);
       }
     }
     const chargeAmountCents = Math.max(50, orderSubmission.pricingSummary.totalCents - discountCents);
