@@ -456,6 +456,7 @@ function App() {
   const [storageNotice, setStorageNotice] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [promoResult, setPromoResult] = useState(null); // { discountCents, code, description }
+  const promoResultRef = useRef(null);
   const [promoError, setPromoError] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -1223,8 +1224,8 @@ function App() {
       },
       paymentIntentId,
       checkoutSessionId,
-      promoCode: promoResult?.code || '',
-      discountCents: promoResult?.discountCents || 0,
+      promoCode: promoResultRef.current?.code || '',
+      discountCents: promoResultRef.current?.discountCents || 0,
       backCoverId,
       backCoverDedication,
       dedicationPageText,
@@ -1336,8 +1337,9 @@ function App() {
         body: JSON.stringify({ code: code.trim(), totalCents: cartSummary.totalCents }),
       });
       const data = await res.json();
-      if (!res.ok) { setPromoError(data.error || 'Invalid code.'); setPromoResult(null); return; }
+      if (!res.ok) { setPromoError(data.error || 'Invalid code.'); setPromoResult(null); promoResultRef.current = null; return; }
       setPromoResult(data);
+      promoResultRef.current = data;
     } catch {
       setPromoError('Unable to validate code.');
     } finally {
@@ -1583,9 +1585,9 @@ function App() {
         promoResult={promoResult}
         promoError={promoError}
         promoLoading={promoLoading}
-        onPromoCodeChange={(v) => { setPromoCode(v); setPromoResult(null); setPromoError(''); }}
+        onPromoCodeChange={(v) => { setPromoCode(v); setPromoResult(null); promoResultRef.current = null; setPromoError(''); }}
         onPromoApply={handleValidatePromo}
-        onPromoRemove={() => { setPromoCode(''); setPromoResult(null); setPromoError(''); }}
+        onPromoRemove={() => { setPromoCode(''); setPromoResult(null); promoResultRef.current = null; setPromoError(''); }}
       />
     );
   } else {
