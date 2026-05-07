@@ -1055,32 +1055,7 @@ function App() {
         return nextImages;
       });
 
-      // Pre-generate the sample photo in the background so preview is instant.
-      // Use 3rd slot (index 2) as sample; fall back to 1st slot (index 0).
-      // Debounced 4s so rapid photo swaps only trigger 1 generation.
-      const isSampleSlot = index === 2 || (index === 0 && uploadedImagesRef.current.filter(Boolean).length < 3);
-      if (isSampleSlot) {
-        clearTimeout(samplePreGenTimerRef.current);
-        const imageForGen = { url: dataUrl, isDataUrl: true, name: file.name };
-        samplePreGenTimerRef.current = setTimeout(() => {
-          requestColoringPage(imageForGen, {
-            sessionId,
-            pageIndex: index,
-            sourceFile: file,
-          }).then((result) => {
-            setGeneratedImages((prev) => {
-              const next = [...prev];
-              next[index] = result;
-              return next;
-            });
-            setSamplePreviewIndex(index);
-            setPreviewGenerationState('ready');
-            autoGenerationStartedRef.current = true;
-          }).catch(() => {
-            // silently fail — will retry when they reach preview
-          });
-        }, 4000);
-      }
+      // Pre-generation disabled — coloring pages are generated manually in admin after payment
     };
 
     reader.readAsDataURL(file);
