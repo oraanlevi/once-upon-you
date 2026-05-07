@@ -556,26 +556,8 @@ function App() {
       autoGenerationStartedRef.current = false;
       return;
     }
-    if (autoGenerationStartedRef.current) return;
-
-    const uploads = uploadedImagesRef.current;
-
-    // Pick the 3rd uploaded photo (index 2) as the sample, fallback to first available
-    const preferredIndex = uploads.findIndex((img, i) => i === 2 && img && img.url);
-    const sampleIndex = preferredIndex >= 0
-      ? preferredIndex
-      : uploads.findIndex((img) => img && img.url);
-
-    if (sampleIndex < 0) return;
-
-    // If this sample was already generated, just show it
-    if (generatedImages[sampleIndex]) {
-      setSamplePreviewIndex(sampleIndex);
-      setPreviewGenerationState('ready');
-      return;
-    }
-
-    autoGenerationStartedRef.current = true;
+    // Auto-preview generation disabled — generation happens after payment only
+    return;
 
     (async () => {
       setIsGeneratingPages(true);
