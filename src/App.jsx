@@ -1234,12 +1234,16 @@ function App() {
         setPaymentSetupError('');
         setIsPreparingPayment(true);
         setPaymentClientSecret('');
+        const payload = buildOrderPayload();
+        // Always read promoCode directly from ref at call time — avoids stale closure
+        payload.promoCode = promoResultRef.current?.code || payload.promoCode || '';
+        console.log('[PAYMENT INTENT] promoResultRef.current:', promoResultRef.current, '| payload.promoCode:', payload.promoCode);
         const response = await fetch(CREATE_PAYMENT_INTENT_API_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(buildOrderPayload()),
+          body: JSON.stringify(payload),
         });
         const responseBody = await response.json().catch(() => ({}));
 
