@@ -225,7 +225,7 @@ function CheckoutPage({
             !paymentSetupError &&
             stripePromise &&
             paymentClientSecret ? (
-              <Elements stripe={stripePromise} options={elementsOptions}>
+              <Elements key={paymentClientSecret} stripe={stripePromise} options={elementsOptions}>
                 <CheckoutPaymentForm
                   shippingData={shippingData}
                   onCompletePaidOrder={onCompletePaidOrder}
