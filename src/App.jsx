@@ -1210,86 +1210,7 @@ function App() {
     return response.json();
   };
 
-  // Track whether we've already kicked off a PI for the current payment-step visit.
-  // This prevents multiple re-runs of the effect (caused by unrelated dep changes)
-  // from creating multiple payment intents and overwriting the correct one.
-  const paymentIntentStartedRef = useRef(false);
-
-  useEffect(() => {
-    if (currentStep !== 'payment') {
-      // Reset so next visit to payment step creates a fresh PI.
-      paymentIntentStartedRef.current = false;
-      return;
-    }
-
-    // Only ever create ONE payment intent per payment-step visit.
-    if (paymentIntentStartedRef.current) {
-      return;
-    }
-
-    if (!selectedProduct) {
-      return;
-    }
-
-    if (!hasValidPublishableStripeKey) {
-      setPaymentClientSecret('');
-      setPaymentSetupError(
-        'Add a valid VITE_STRIPE_PUBLISHABLE_KEY to the frontend environment to load payment.',
-      );
-      return;
-    }
-
-    paymentIntentStartedRef.current = true;
-    let isCancelled = false;
-
-    const preparePaymentIntent = async () => {
-      try {
-        setPaymentSetupError('');
-        setIsPreparingPayment(true);
-        setPaymentClientSecret('');
-        const payload = buildOrderPayload();
-        // Read promo from ref at call time — always has the latest value.
-        payload.promoCode = promoResultRef.current?.code || payload.promoCode || '';
-        console.log('[PAYMENT INTENT] promoResultRef.current:', promoResultRef.current, '| payload.promoCode:', payload.promoCode);
-        const response = await fetch(CREATE_PAYMENT_INTENT_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const responseBody = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(responseBody.error || 'Unable to prepare secure payment.');
-        }
-
-        if (isCancelled) {
-          return;
-        }
-
-        if (!responseBody.clientSecret || typeof responseBody.clientSecret !== 'string') {
-          throw new Error('Stripe did not return a client secret.');
-        }
-
-        console.log('[PAYMENT INTENT] Server returned amount:', responseBody.amount, 'cents = $' + (responseBody.amount / 100).toFixed(2));
-        setPaymentClientSecret(responseBody.clientSecret);
-      } catch (error) {
-        if (!isCancelled) {
-          paymentIntentStartedRef.current = false; // Allow retry on error.
-          setPaymentSetupError(error?.message || 'Unable to prepare secure payment.');
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsPreparingPayment(false);
-        }
-      }
-    };
-
-    preparePaymentIntent();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [currentStep, selectedProduct?.id]);
+  // No useEffect for PI creation — it's triggered directly from handleContinueToPayment.
 
   const handleValidatePromo = async (code) => {
     if (!code.trim()) return;
@@ -1312,7 +1233,7 @@ function App() {
     }
   };
 
-  const handleContinueToPayment = () => {
+  const handleContinueToPayment = async () => {
     const { firstName, lastName, email, address, city, postalCode, country } = shippingData;
     if (!firstName || !lastName || !email || !address || !city || !postalCode || !country) {
       setPaymentError('Please fill in all shipping fields before continuing.');
@@ -1322,9 +1243,35 @@ function App() {
       setPaymentError('Please enter a valid email address.');
       return;
     }
+
+    if (!hasValidPublishableStripeKey) {
+      setPaymentSetupError('Payment is not configured. Please contact support.');
+      return;
+    }
+
     setPaymentError('');
     setPaymentSetupError('');
-    setCurrentStep('payment');
+    setPaymentClientSecret('');
+    setIsPreparingPayment(true);
+
+    try {
+      const payload = buildOrderPayload();
+      payload.promoCode = promoResultRef.current?.code || payload.promoCode || '';
+      const response = await fetch(CREATE_PAYMENT_INTENT_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const responseBody = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(responseBody.error || 'Unable to prepare secure payment.');
+      if (!responseBody.clientSecret) throw new Error('Stripe did not return a client secret.');
+      setPaymentClientSecret(responseBody.clientSecret);
+      setCurrentStep('payment');
+    } catch (error) {
+      setPaymentSetupError(error?.message || 'Unable to prepare secure payment.');
+    } finally {
+      setIsPreparingPayment(false);
+    }
   };
 
   const handleCompletePaidOrder = async (paymentIntentId) => {
@@ -1435,6 +1382,7 @@ function App() {
   };
 
   const handlePaymentBack = () => {
+    setPaymentClientSecret('');
     setCurrentStep('checkout');
   };
 
