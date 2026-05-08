@@ -2113,6 +2113,7 @@ if (smtpHost && smtpUser && smtpPass) {
     port: smtpPort,
     secure: smtpPort === 465,
     auth: { user: smtpUser, pass: smtpPass },
+    family: 4, // Force IPv4 — Railway blocks outbound IPv6
   });
   console.log('[EMAIL] SMTP transporter configured:', smtpHost);
 } else {
