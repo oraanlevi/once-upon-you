@@ -13,8 +13,26 @@ import Stripe from 'stripe';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
+
+// ─── Cloudinary ───────────────────────────────────────────────────────────────
+const CLOUDINARY_ENABLED = Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+if (CLOUDINARY_ENABLED) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  console.log('[CLOUDINARY] Enabled — uploads will be backed up to cloud storage');
+} else {
+  console.warn('[CLOUDINARY] Not configured — uploads will only be saved locally');
+}
 
 const SERVER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 
@@ -1173,6 +1191,27 @@ app.post('/api/session/save-originals', upload.array('images', 30), async (req, 
       const ext = getExtensionForMimeType(imageMimeType);
       const originalPath = path.join(originalsDir, `${pageBaseName}-original.${ext}`);
       await fs.writeFile(originalPath, imageBuffer);
+
+      // Back up to Cloudinary so images survive server restarts/redeploys
+      if (CLOUDINARY_ENABLED) {
+        try {
+          await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              {
+                folder: `once-upon-you/sessions/session-${sessionId}`,
+                public_id: `${pageBaseName}-original`,
+                resource_type: 'image',
+                overwrite: true,
+              },
+              (error, result) => (error ? reject(error) : resolve(result))
+            );
+            uploadStream.end(imageBuffer);
+          });
+        } catch (cloudErr) {
+          console.error('[CLOUDINARY] Upload failed for', pageBaseName, cloudErr.message);
+          // Non-fatal — local save already succeeded
+        }
+      }
     }));
 
     console.log('[SAVE-ORIGINALS] Saved', req.files.length, 'originals for session', sessionId);
@@ -1829,6 +1868,30 @@ app.post('/api/orders/complete', async (req, res) => {
         ).catch((e) => console.warn('[ORDER COMPLETE] Failed to copy generated:', filename, e.message)),
       ),
     ]);
+
+    // Back up originals to Cloudinary under the order ID
+    if (CLOUDINARY_ENABLED && originalFiles.length > 0) {
+      Promise.all(originalFiles.map(async (filename) => {
+        try {
+          const filePath = path.join(orderOriginals, filename);
+          const buffer = await fs.readFile(filePath);
+          await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+              {
+                folder: `once-upon-you/orders/${orderId}`,
+                public_id: filename.replace(/\.[^.]+$/, ''),
+                resource_type: 'image',
+                overwrite: true,
+              },
+              (error, result) => (error ? reject(error) : resolve(result))
+            );
+            stream.end(buffer);
+          });
+        } catch (e) {
+          console.error('[CLOUDINARY] Order backup failed for', filename, e.message);
+        }
+      })).catch(() => {}); // non-blocking
+    }
 
     const createdAt = new Date().toISOString();
     // Always calculate delivery as 5 business days from now server-side
@@ -2632,7 +2695,17 @@ app.get('/api/admin/orders', requireAdmin, async (_req, res) => {
     );
     const orders = results
       .filter(Boolean)
-      .sort((a, b) => (Date.parse(b?.createdAt) || 0) - (Date.parse(a?.createdAt) || 0));
+      .sort((a, b) => (Date.parse(b?.createdAt) || 0) - (Date.parse(a?.createdAt) || 0))
+      .map((order) => {
+        if (!CLOUDINARY_ENABLED || !order.orderId) return order;
+        // Attach Cloudinary backup URLs so admin UI can fall back if local files are gone
+        const pageCount = order.pricingSummary?.pageCount || order.pageCount || 0;
+        const cloudinaryUrls = Array.from({ length: pageCount }, (_, i) => {
+          const pageName = `page-${String(i + 1).padStart(2, '0')}`;
+          return cloudinary.url(`once-upon-you/orders/${order.orderId}/${pageName}-original`, { secure: true });
+        });
+        return { ...order, cloudinaryUrls };
+      });
     res.json({ count: orders.length, orders });
   } catch (error) {
     res.status(500).json({ error: 'Failed to load orders.' });
@@ -2655,6 +2728,12 @@ app.get('/api/admin/orders/:orderId/image/:type/:filename', requireAdmin, async 
     }
     res.sendFile(imagePath);
   } catch {
+    // Local file missing — try Cloudinary backup
+    if (CLOUDINARY_ENABLED && type === 'originals') {
+      const publicId = `once-upon-you/orders/${orderId}/${safeFilename.replace(/\.[^.]+$/, '')}`;
+      const cloudUrl = cloudinary.url(publicId, { secure: true });
+      return res.redirect(302, cloudUrl);
+    }
     res.status(404).json({ error: 'Image not found.' });
   }
 });

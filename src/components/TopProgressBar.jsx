@@ -23,8 +23,9 @@ function TopProgressBar({ steps, currentStep, onNavigate }) {
                 aria-current={isActive ? 'step' : undefined}
               >
                 {isComplete && (
-                  <svg className="chip-check" width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden="true">
-                    <path d="M1 3.5l2 2L8 1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg className="chip-check" width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+                    <circle cx="6.5" cy="6.5" r="6.5" fill="currentColor" fillOpacity="0.18"/>
+                    <path d="M3.5 6.5l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
                 {step.shortLabel || step.label}

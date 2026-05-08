@@ -333,6 +333,14 @@ function loadPersistedBuilderState() {
           : {},
       selectedProductId:
         typeof parsed.selectedProductId === 'string' ? parsed.selectedProductId : null,
+      dedicationPageText:
+        typeof parsed.dedicationPageText === 'string' ? parsed.dedicationPageText : '',
+      backCoverId:
+        typeof parsed.backCoverId === 'string' ? parsed.backCoverId : 'classic',
+      backCoverDedication:
+        typeof parsed.backCoverDedication === 'string' ? parsed.backCoverDedication : '',
+      coverNotes:
+        typeof parsed.coverNotes === 'string' ? parsed.coverNotes : '',
     };
   } catch {
     return null;
@@ -702,6 +710,10 @@ function App() {
       introStage,
       currentStep,
       selectedPageCount,
+      dedicationPageText: dedicationPageText || '',
+      backCoverId: backCoverId || '',
+      backCoverDedication: backCoverDedication || '',
+      coverNotes: coverNotes || '',
       uploadedImages: uploadedImages.map((image) =>
         image
           ? {
@@ -777,6 +789,10 @@ function App() {
     cartSummary.selectedPageCount,
     cartSummary.totalCents,
     storageNotice,
+    dedicationPageText,
+    backCoverId,
+    backCoverDedication,
+    coverNotes,
   ]);
 
   useEffect(() => {
@@ -1067,20 +1083,33 @@ function App() {
 
     // Upload all original photos to the server immediately so they're always saved in admin.
     try {
-      const files = uploadedSourceFilesRef.current;
-      if (files && files.length > 0) {
+      const sourceFiles = uploadedSourceFilesRef.current;
+      const currentImages = uploadedImagesRef.current;
+      const hasAny = currentImages.some(Boolean);
+      if (hasAny) {
         const formData = new FormData();
         formData.append('sessionId', sessionId);
-        files.forEach((file, i) => {
-          if (file) {
+        currentImages.forEach((image, i) => {
+          const file = sourceFiles[i];
+          if (file instanceof File) {
+            // Prefer the original File object (no re-encoding needed)
             formData.append('images', file);
             formData.append(`pageIndex_${formData.getAll('images').length - 1}`, String(i));
+          } else if (image?.url && image.isDataUrl) {
+            // Fall back: convert data URL back to a File for images from a previous session
+            try {
+              const blob = dataUrlToFile(image.url, image.name || `photo-${i}.png`);
+              formData.append('images', blob);
+              formData.append(`pageIndex_${formData.getAll('images').length - 1}`, String(i));
+            } catch { /* skip this image if conversion fails */ }
           }
         });
-        await fetch(`${API_BASE_URL}/api/session/save-originals`, {
-          method: 'POST',
-          body: formData,
-        }).catch(() => {}); // non-blocking — don't block the user
+        if (formData.getAll('images').length > 0) {
+          await fetch(`${API_BASE_URL}/api/session/save-originals`, {
+            method: 'POST',
+            body: formData,
+          }).catch(() => {}); // non-blocking — don't block the user
+        }
       }
     } catch { /* silently ignore */ }
   };
@@ -1518,8 +1547,30 @@ function App() {
 
   return (
     <main className="app-shell">
+      <div className="site-tagline-bar">Turn Your Memories Into a Legendary Story</div>
       <div className="configurator-shell">
         <aside className="configurator-sidebar">
+          <div className="sidebar-auth">
+            {authUser ? (
+              <button
+                type="button"
+                className="sidebar-auth-btn sidebar-auth-btn--user"
+                onClick={() => setShowAccountPage(true)}
+              >
+                <span className="sidebar-auth-avatar">{authUser.firstName?.charAt(0) || authUser.email?.charAt(0) || 'U'}</span>
+                <span className="sidebar-auth-name">{authUser.firstName || 'Account'}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="sidebar-auth-btn"
+                onClick={() => setShowAuthModal(true)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Log In
+              </button>
+            )}
+          </div>
           <StepTracker steps={TRACKER_STEPS} currentStep={trackerStep} onNavigate={handleNavigateStep} />
         </aside>
 
@@ -1537,29 +1588,12 @@ function App() {
                   type="button"
                   className="reset-book-button"
                   onClick={handleStartOver}
-                  title="Reset Book"
+                  title="Start over"
                 >
-                  <span className="reset-book-label">Reset</span>
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true" className="reset-book-icon"><path d="M2 6.5a4.5 4.5 0 1 1 1.06 2.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M2 9.5V6.5h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <span className="reset-book-label">Start over</span>
                 </button>
               ) : null}
-              {authUser ? (
-                <button
-                  type="button"
-                  className="auth-header-btn auth-header-btn--user"
-                  onClick={() => setShowAccountPage(true)}
-                >
-                  <span className="auth-header-avatar">{authUser.firstName?.charAt(0) || authUser.email?.charAt(0) || 'U'}</span>
-                  <span className="auth-header-name">{authUser.firstName || 'Account'}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="auth-header-btn"
-                  onClick={() => setShowAuthModal(true)}
-                >
-                  Log In
-                </button>
-              )}
             </div>
           </header>
           <div className="configurator-main-content" ref={mainContentRef}>

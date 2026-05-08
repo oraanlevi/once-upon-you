@@ -35,7 +35,7 @@
   --ui-button: linear-gradient(160deg, #9060b4, #633a82);
   --ui-shadow: var(--shadow-paper);
   --ui-shadow-soft: var(--shadow-soft);
-  --ui-header-height: 78px;
+  --ui-header-height: 78px; /* topbar only — tagline bar is now above the shell */
   --builder-content-top-space: 56px;
   --radius-sm: 10px;
   --radius-md: 14px;
@@ -80,7 +80,8 @@ body {
   position: relative;
   z-index: 1;
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 32px);
+  margin-top: 32px;
   display: grid;
   grid-template-columns: clamp(180px, 18vw, 220px) minmax(0, 1fr);
   overflow: hidden;
@@ -89,14 +90,14 @@ body {
 .configurator-sidebar {
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: calc(100vh - 32px);
   width: 100%;
   background: linear-gradient(180deg, rgba(255, 249, 242, 0.95) 0%, rgba(255, 240, 232, 0.9) 100%);
   border-right: 1px solid rgba(200, 180, 220, 0.2);
-  padding: clamp(72px, 10vh, 96px) clamp(10px, 1.5vw, 16px) 24px;
+  padding: clamp(16px, 3vh, 28px) clamp(10px, 1.5vw, 16px) 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
   z-index: 20;
 }
 
@@ -105,9 +106,64 @@ body {
   display: none;
 }
 
+.sidebar-auth {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(116, 70, 149, 0.1);
+  flex-shrink: 0;
+}
+
+.sidebar-auth-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(116, 70, 149, 0.15);
+  background: rgba(255, 255, 255, 0.5);
+  color: rgba(116, 70, 149, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sidebar-auth-btn:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(116, 70, 149, 0.28);
+  color: var(--ui-primary);
+  box-shadow: 0 2px 8px rgba(116, 70, 149, 0.1);
+}
+
+.sidebar-auth-btn--user {
+  background: rgba(116, 70, 149, 0.06);
+}
+
+.sidebar-auth-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5bbf, #6a3d9a);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-auth-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .configurator-main {
   min-width: 0;
-  height: 100vh;
+  height: calc(100vh - 32px);
   display: block;
   padding: 0;
   overflow: hidden;
@@ -125,6 +181,29 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* ─── Tagline bar ─── */
+
+.site-tagline-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  padding-top: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 400;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  color: #7446a0;
+  background: transparent;
+  z-index: 100;
+  text-transform: none;
 }
 
 /* ─── Topbar ─── */
@@ -172,8 +251,8 @@ body {
 
 .configurator-main-content {
   position: relative;
-  height: 100vh;
-  min-height: 100vh;
+  height: calc(100vh - 32px);
+  min-height: calc(100vh - 32px);
   overflow-y: auto;
   overflow-x: hidden;
   padding: calc(var(--ui-header-height) + var(--builder-content-top-space)) clamp(14px, 3vw, 28px) 40px;
@@ -236,29 +315,35 @@ body {
 .top-progress-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .top-progress-step {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .progress-sep {
   display: block;
-  width: 16px;
-  height: 1px;
+  width: 20px;
+  height: 1.5px;
   background: rgba(116, 70, 149, 0.15);
   border-radius: 999px;
-  margin: 0 2px;
+  margin: 0 3px;
+  transition: background 0.3s ease;
+}
+
+.top-progress-step.is-complete + .top-progress-step .progress-sep,
+.top-progress-step.is-complete .progress-sep {
+  background: rgba(116, 70, 149, 0.4);
 }
 
 .top-progress-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 11px;
+  gap: 5px;
+  padding: 5px 13px;
   border-radius: 999px;
   font-size: 11.5px;
   font-weight: 500;
@@ -290,15 +375,84 @@ button.top-progress-chip {
 }
 
 .top-progress-step.is-complete .top-progress-chip {
-  color: rgba(116, 70, 149, 0.55);
+  color: rgba(116, 70, 149, 0.65);
+  background: rgba(116, 70, 149, 0.06);
+  border-radius: 999px;
 }
 
 .top-progress-step.is-active .top-progress-chip {
-  background: var(--ui-primary);
+  background: linear-gradient(135deg, #8b5bbf 0%, #6a3d9a 100%);
   color: #fff;
   font-weight: 650;
-  box-shadow: 0 2px 10px rgba(116, 70, 149, 0.28);
+  box-shadow: 0 3px 14px rgba(116, 70, 149, 0.38), 0 1px 3px rgba(116, 70, 149, 0.2);
+  letter-spacing: 0.01em;
 }
+
+/* ─── Segmented bar override (remove this block to restore pill style) ─── */
+
+.top-progress-bar {
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+}
+
+.top-progress-step {
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding-bottom: 8px;
+  position: relative;
+}
+
+.top-progress-step::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 3px;
+  right: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(116, 70, 149, 0.1);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.top-progress-step.is-complete::after {
+  background: rgba(116, 70, 149, 0.35);
+}
+
+.top-progress-step.is-active::after {
+  background: linear-gradient(90deg, #8b5bbf, #6a3d9a);
+  box-shadow: 0 0 8px rgba(116, 70, 149, 0.45);
+  height: 3px;
+}
+
+.progress-sep { display: none; }
+
+.top-progress-chip {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 6px !important;
+  padding: 4px 6px !important;
+  width: 100%;
+  justify-content: center;
+}
+
+.top-progress-step.is-active .top-progress-chip {
+  color: var(--ui-primary) !important;
+  font-weight: 700 !important;
+  font-size: 12.5px !important;
+}
+
+.top-progress-step.is-complete .top-progress-chip {
+  background: transparent !important;
+}
+
+.top-progress-step.is-active button.top-progress-chip:hover {
+  background: rgba(116, 70, 149, 0.06) !important;
+}
+
+/* ─── end segmented bar ─── */
 
 /* Narrow: shrink inactive chips to dots */
 @media (max-width: 360px) {
@@ -461,22 +615,37 @@ button.top-progress-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 34px;
+  gap: 5px;
+  min-height: 32px;
   padding: 0 12px;
-  border-radius: var(--radius-sm);
-  border-color: rgba(116, 70, 149, 0.14);
-  background: rgba(116, 70, 149, 0.04);
-  color: var(--text-muted);
+  border-radius: 999px;
+  border: 1px solid rgba(116, 70, 149, 0.18);
+  background: rgba(255, 255, 255, 0.6);
+  color: rgba(116, 70, 149, 0.55);
   white-space: nowrap;
-  font-size: 12.5px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.reset-book-icon {
+  flex-shrink: 0;
+  transition: transform 0.4s ease;
 }
 
 .reset-book-button:hover {
-  border-color: rgba(116, 70, 149, 0.24);
-  background: rgba(116, 70, 149, 0.07);
+  border-color: rgba(116, 70, 149, 0.32);
+  background: rgba(255, 255, 255, 0.85);
   color: var(--ui-primary);
   transform: none;
-  box-shadow: none;
+  box-shadow: 0 2px 8px rgba(116, 70, 149, 0.12);
+}
+
+.reset-book-button:hover .reset-book-icon {
+  transform: rotate(-180deg);
 }
 
 .upload-back {
@@ -1132,6 +1301,46 @@ button.top-progress-chip {
   border-color: var(--ui-primary);
   background: linear-gradient(160deg, rgba(248, 242, 255, 0.96), rgba(252, 246, 237, 0.94));
   box-shadow: 0 0 0 2.5px rgba(116, 70, 149, 0.1);
+}
+
+/* ─── Custom checkbox ─── */
+.addon-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.addon-check input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border-medium);
+  border-radius: 5px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.addon-check input[type="checkbox"]:checked {
+  background: var(--ui-primary);
+  border-color: var(--ui-primary);
+}
+
+.addon-check input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid white;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
 }
 
 .addon-meta strong {
@@ -2153,8 +2362,16 @@ button.top-progress-chip {
   }
 
   .reset-book-button {
-    padding: 5px 10px;
-    font-size: 0.65rem;
+    padding: 0 9px;
+    min-height: 28px;
+    font-size: 0;
+    gap: 0;
+    border-radius: 50%;
+    width: 28px;
+  }
+
+  .reset-book-icon {
+    font-size: initial;
   }
 
   /* Checkout stacks on tablet */
