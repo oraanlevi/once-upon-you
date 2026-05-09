@@ -18,6 +18,7 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^8.0.7",
     "openai": "^4.63.0",
+    "resend": "^6.12.3",
     "sharp": "^0.34.5",
     "stripe": "^20.4.1"
   }

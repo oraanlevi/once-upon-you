@@ -15,7 +15,7 @@ import OpenAI, { toFile } from 'openai';
 import Stripe from 'stripe';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
@@ -2162,34 +2162,23 @@ app.use((error, _req, res, _next) => {
 const JWT_SECRET = normalizeEnvValue(process.env.JWT_SECRET) || 'twice-upon-us-dev-secret-change-in-prod';
 const JWT_EXPIRES_IN = '30d';
 const APP_BASE_URL = normalizeEnvValue(process.env.APP_BASE_URL || 'http://localhost:5174');
-const FROM_EMAIL = normalizeEnvValue(process.env.SMTP_FROM || 'Twice Upon Us <noreply@twiceuponus.com>');
+const FROM_EMAIL = normalizeEnvValue(process.env.RESEND_FROM || process.env.SMTP_FROM || 'Once Upon You <onboarding@resend.dev>');
 
 // ─── Email ────────────────────────────────────────────────────────────────────
 
-const smtpHost = normalizeEnvValue(process.env.SMTP_HOST);
-const smtpUser = normalizeEnvValue(process.env.SMTP_USER);
-const smtpPass = normalizeEnvValue(process.env.SMTP_PASS);
-const smtpPort = Number(process.env.SMTP_PORT || 587);
+const RESEND_API_KEY = normalizeEnvValue(process.env.RESEND_API_KEY);
+const resendClient = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
-let emailTransporter = null;
-
-if (smtpHost && smtpUser && smtpPass) {
-  emailTransporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465,
-    auth: { user: smtpUser, pass: smtpPass },
-    family: 4, // Force IPv4 — Railway blocks outbound IPv6
-  });
-  console.log('[EMAIL] SMTP transporter configured:', smtpHost);
+if (resendClient) {
+  console.log('[EMAIL] Resend configured — transactional emails enabled');
 } else {
-  console.log('[EMAIL] No SMTP configured — emails will be logged to console only.');
+  console.log('[EMAIL] No email provider configured — emails will be logged to console only.');
 }
 
 async function sendEmail({ to, subject, html, text }) {
-  if (emailTransporter) {
+  if (resendClient) {
     try {
-      await emailTransporter.sendMail({ from: FROM_EMAIL, to, subject, html, text });
+      await resendClient.emails.send({ from: FROM_EMAIL, to, subject, html, text });
       console.log('[EMAIL] Sent:', subject, '->', to);
     } catch (err) {
       console.error('[EMAIL] Failed to send:', err.message);
