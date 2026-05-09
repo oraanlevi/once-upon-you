@@ -1,3 +1,6 @@
+import dns from 'dns';
+dns.setDefaultResultOrder('ipv4first');
+
 import path from 'path';
 import crypto from 'crypto';
 import { promises as fs } from 'fs';
