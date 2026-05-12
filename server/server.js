@@ -16,25 +16,47 @@ import Stripe from 'stripe';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Resend } from 'resend';
-import { v2 as cloudinary } from 'cloudinary';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 dotenv.config();
 
-// ─── Cloudinary ───────────────────────────────────────────────────────────────
-const CLOUDINARY_ENABLED = Boolean(
-  process.env.CLOUDINARY_CLOUD_NAME &&
-  process.env.CLOUDINARY_API_KEY &&
-  process.env.CLOUDINARY_API_SECRET
+// ─── S3 ───────────────────────────────────────────────────────────────────────
+const S3_ENABLED = Boolean(
+  process.env.AWS_ACCESS_KEY_ID &&
+  process.env.AWS_SECRET_ACCESS_KEY &&
+  process.env.AWS_REGION &&
+  process.env.AWS_S3_BUCKET
 );
-if (CLOUDINARY_ENABLED) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key:    process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+const S3_BUCKET = process.env.AWS_S3_BUCKET || '';
+let s3Client = null;
+if (S3_ENABLED) {
+  s3Client = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
   });
-  console.log('[CLOUDINARY] Enabled — uploads will be backed up to cloud storage');
+  console.log('[S3] Enabled — uploads will be backed up to S3 bucket:', S3_BUCKET);
 } else {
-  console.warn('[CLOUDINARY] Not configured — uploads will only be saved locally');
+  console.warn('[S3] Not configured — uploads will only be saved locally');
+}
+
+async function uploadToS3(buffer, key, contentType = 'image/jpeg') {
+  if (!S3_ENABLED) return null;
+  try {
+    await s3Client.send(new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    }));
+    return key;
+  } catch (err) {
+    console.error('[S3] Upload failed for', key, err.message);
+    return null;
+  }
 }
 
 const SERVER_ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -1195,26 +1217,12 @@ app.post('/api/session/save-originals', upload.array('images', 30), async (req, 
       const originalPath = path.join(originalsDir, `${pageBaseName}-original.${ext}`);
       await fs.writeFile(originalPath, imageBuffer);
 
-      // Back up to Cloudinary so images survive server restarts/redeploys
-      if (CLOUDINARY_ENABLED) {
-        try {
-          await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-              {
-                folder: `once-upon-you/sessions/session-${sessionId}`,
-                public_id: `${pageBaseName}-original`,
-                resource_type: 'image',
-                overwrite: true,
-              },
-              (error, result) => (error ? reject(error) : resolve(result))
-            );
-            uploadStream.end(imageBuffer);
-          });
-        } catch (cloudErr) {
-          console.error('[CLOUDINARY] Upload failed for', pageBaseName, cloudErr.message);
-          // Non-fatal — local save already succeeded
-        }
-      }
+      // Back up to S3 so images survive server restarts/redeploys
+      await uploadToS3(
+        imageBuffer,
+        `sessions/session-${sessionId}/${pageBaseName}-original.${ext}`,
+        imageMimeType,
+      );
     }));
 
     console.log('[SAVE-ORIGINALS] Saved', req.files.length, 'originals for session', sessionId);
@@ -1872,28 +1880,13 @@ app.post('/api/orders/complete', async (req, res) => {
       ),
     ]);
 
-    // Back up originals to Cloudinary under the order ID
-    if (CLOUDINARY_ENABLED && originalFiles.length > 0) {
+    // Back up originals to S3 under the order ID (non-blocking)
+    if (S3_ENABLED && originalFiles.length > 0) {
       Promise.all(originalFiles.map(async (filename) => {
-        try {
-          const filePath = path.join(orderOriginals, filename);
-          const buffer = await fs.readFile(filePath);
-          await new Promise((resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(
-              {
-                folder: `once-upon-you/orders/${orderId}`,
-                public_id: filename.replace(/\.[^.]+$/, ''),
-                resource_type: 'image',
-                overwrite: true,
-              },
-              (error, result) => (error ? reject(error) : resolve(result))
-            );
-            stream.end(buffer);
-          });
-        } catch (e) {
-          console.error('[CLOUDINARY] Order backup failed for', filename, e.message);
-        }
-      })).catch(() => {}); // non-blocking
+        const filePath = path.join(orderOriginals, filename);
+        const buffer = await fs.readFile(filePath);
+        await uploadToS3(buffer, `orders/${orderId}/originals/${filename}`);
+      })).catch(() => {});
     }
 
     const createdAt = new Date().toISOString();
@@ -2688,16 +2681,7 @@ app.get('/api/admin/orders', requireAdmin, async (_req, res) => {
     const orders = results
       .filter(Boolean)
       .sort((a, b) => (Date.parse(b?.createdAt) || 0) - (Date.parse(a?.createdAt) || 0))
-      .map((order) => {
-        if (!CLOUDINARY_ENABLED || !order.orderId) return order;
-        // Attach Cloudinary backup URLs so admin UI can fall back if local files are gone
-        const pageCount = order.pricingSummary?.pageCount || order.pageCount || 0;
-        const cloudinaryUrls = Array.from({ length: pageCount }, (_, i) => {
-          const pageName = `page-${String(i + 1).padStart(2, '0')}`;
-          return cloudinary.url(`once-upon-you/orders/${order.orderId}/${pageName}-original`, { secure: true });
-        });
-        return { ...order, cloudinaryUrls };
-      });
+      .map((order) => order);
     res.json({ count: orders.length, orders });
   } catch (error) {
     res.status(500).json({ error: 'Failed to load orders.' });
@@ -2720,11 +2704,15 @@ app.get('/api/admin/orders/:orderId/image/:type/:filename', requireAdmin, async 
     }
     res.sendFile(imagePath);
   } catch {
-    // Local file missing — try Cloudinary backup
-    if (CLOUDINARY_ENABLED && type === 'originals') {
-      const publicId = `once-upon-you/orders/${orderId}/${safeFilename.replace(/\.[^.]+$/, '')}`;
-      const cloudUrl = cloudinary.url(publicId, { secure: true });
-      return res.redirect(302, cloudUrl);
+    // Local file missing — try S3 backup
+    if (S3_ENABLED && type === 'originals') {
+      try {
+        const s3Key = `orders/${orderId}/originals/${safeFilename}`;
+        const url = await getSignedUrl(s3Client, new GetObjectCommand({ Bucket: S3_BUCKET, Key: s3Key }), { expiresIn: 300 });
+        return res.redirect(302, url);
+      } catch {
+        // fall through to 404
+      }
     }
     res.status(404).json({ error: 'Image not found.' });
   }
