@@ -6,6 +6,7 @@ function CheckoutPaymentForm({
   shippingData,
   onCompletePaidOrder,
   cartSummary,
+  displayTotalCents,
   isProcessingPayment,
   processingLabel,
   paymentError,
@@ -94,7 +95,7 @@ function CheckoutPaymentForm({
         >
           {isProcessingPayment
             ? (processingLabel || 'Processing payment...')
-            : `Pay ${formatMoney(cartSummary.totalCents)}`}
+            : `Pay ${formatMoney(displayTotalCents ?? cartSummary.totalCents)}`}
         </button>
       </div>
     </form>

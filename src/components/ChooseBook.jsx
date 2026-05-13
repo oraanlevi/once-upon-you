@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { STORY_THEMES } from './ChooseStory';
 import {
   calculateProductPricing,
   formatMoney,
@@ -13,17 +14,20 @@ const PRODUCT_PRESENTATION = {
   },
   'pocket-book': {
     shortLine: 'Petite printed keepsake',
+    sizeInfo: '5.5 × 8.5 IN',
     visualClass: 'pocket',
     emoji: '🌸',
   },
   'large-book': {
     shortLine: 'Classic giftable format',
+    sizeInfo: '8.5 × 11 IN',
     visualClass: 'large',
     recommendation: 'Most Popular',
     emoji: '⭐',
   },
   'premium-keepsake-book': {
-    shortLine: 'Our most elevated edition.',
+    shortLine: 'Thick art paper · glossy cover',
+    sizeInfo: '8.5 × 11 IN',
     visualClass: 'premium',
     emoji: '👑',
     perks: ['Premium thick art paper', 'Glossy laminated cover included', '10% off your next order'],
@@ -31,9 +35,9 @@ const PRODUCT_PRESENTATION = {
 };
 
 const ADDON_GROUPS = [
-  { label: '⭐ Popular', ids: ['digital-download', 'gift-wrap', 'custom-cover-photo', 'coloring-pencil-set'] },
-  { label: '🎁 Make it a Gift', ids: ['greeting-card', 'dedication-page'] },
-  { label: '⚡ Get It Faster', ids: ['rush-order', 'additional-copy'] },
+  { label: 'Popular', ids: ['digital-download', 'gift-wrap', 'custom-cover-photo', 'coloring-pencil-set'] },
+  { label: 'Make it a Gift', ids: ['greeting-card', 'dedication-page'] },
+  { label: 'Get It Faster', ids: ['rush-order', 'additional-copy'] },
 ];
 
 function getProductPresentation(product) {
@@ -52,6 +56,8 @@ function ChooseBook({
   addOnQuantities,
   cartSummary,
   dedicationPageText,
+  selectedThemeId,
+  onSelectTheme,
   onSelectProduct,
   onSelectPageCount,
   onContinueToUploads,
@@ -83,14 +89,51 @@ function ChooseBook({
         <div className="choose-page-layout">
           <div className="choose-page-main">
             <div className="choose-book-hero choose-top--focused">
-              <p className="builder-eyebrow">Step 1 of 3</p>
-              <h2 id="choose-book-title">Choose your format</h2>
+              <h2 id="choose-book-title">Begin Your Story</h2>
             </div>
 
             <div className="chapter-control-stack">
+
+              {/* ── Choose Your Story ── */}
+              <section className="builder-panel builder-panel-story" aria-labelledby="story-selection-title">
+                <div className="builder-section-head">
+                  <div>
+                    <h3 id="story-selection-title" className="story-section-title">Start With a Feeling</h3>
+                  </div>
+                </div>
+                <div
+                  className="story-scroll-track"
+                  role="list"
+                  aria-label="Story themes"
+                >
+                  {STORY_THEMES.map((theme) => {
+                    const isSelected = theme.id === selectedThemeId;
+                    return (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        role="listitem"
+                        className={`story-card ${isSelected ? 'is-selected' : ''}`}
+                        style={{ '--card-gradient': theme.gradient, '--card-accent': theme.accent }}
+                        onClick={() => onSelectTheme(isSelected ? null : theme.id)}
+                        aria-pressed={isSelected}
+                      >
+                        <span className="story-card-emoji" aria-hidden="true">{theme.emoji}</span>
+                        <strong className="story-card-label">{theme.label}</strong>
+                        {isSelected && <span className="story-card-check" aria-hidden="true">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedThemeId && (
+                  <p className="story-selected-note">
+                    ✦ {STORY_THEMES.find(t => t.id === selectedThemeId)?.tagline}
+                  </p>
+                )}
+              </section>
+
               <section className="builder-panel builder-panel-books" aria-labelledby="book-selection-title">
                 <div className="builder-section-head">
-                  <span className="builder-step-number">1</span>
                   <div>
                     <p className="builder-pricing-label">Choose a book</p>
                     <h3 id="book-selection-title">Pick the type of book that fits your story best.</h3>
@@ -125,6 +168,7 @@ function ChooseBook({
                         </span>
                         <span className="product-card-copy">
                           <strong className="product-card-title">{product.name}</strong>
+                          {presentation.sizeInfo && <span className="product-card-size">{presentation.sizeInfo}</span>}
                           <span className="product-card-description">{presentation.shortLine}</span>
                           {presentation.perks && (
                             <ul className="product-card-perks">
@@ -152,7 +196,6 @@ function ChooseBook({
               {selectedProduct ? (
                 <section className="builder-panel builder-panel-customize" aria-labelledby="page-customization-title">
                   <div className="builder-section-head">
-                    <span className="builder-step-number">2</span>
                     <div>
                       <p className="builder-pricing-label">Select page count</p>
                       <h3 id="page-customization-title">How many pages would you like?</h3>
@@ -279,9 +322,6 @@ function ChooseBook({
                 >
                   Start Creating Your Book →
                 </button>
-                <p className="builder-cta-note">
-                  Next chapter: add your favorite photos so we can begin building your keepsake.
-                </p>
               </div>
             ) : null}
           </div>

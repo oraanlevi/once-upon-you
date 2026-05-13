@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import BookCover from './components/BookCover';
 import ChooseBook from './components/ChooseBook';
+import ChooseStory, { STORY_THEMES, DEFAULT_INSPIRATION } from './components/ChooseStory';
 import UploadPhotos from './components/UploadPhotos';
 import PreviewBook from './components/PreviewBook';
 import StepTracker from './components/StepTracker';
@@ -438,6 +439,7 @@ function App() {
 
   const [introStage, setIntroStage] = useState('cover');
   const [currentStep, setCurrentStep] = useState(persistedState?.currentStep ?? 'choose');
+  const [selectedThemeId, setSelectedThemeId] = useState(null);
   const [selectedPageCount, setSelectedPageCount] = useState(
     persistedState?.selectedPageCount ?? 15,
   );
@@ -1032,49 +1034,53 @@ function App() {
       autoGenerationStartedRef.current = false;
     }
 
-    const reader = new FileReader();
+    const isHeic =
+      file.type === 'image/heic' ||
+      file.type === 'image/heif' ||
+      /\.(heic|heif)$/i.test(file.name);
 
-    reader.onerror = () => {
-      setGenerationError('Could not read that image. Please try a different photo.');
-    };
-
-    reader.onload = () => {
-      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
-
-      if (!dataUrl) {
+    const readFileAsDataUrl = (fileOrBlob, name) => {
+      const reader = new FileReader();
+      reader.onerror = () => {
         setGenerationError('Could not read that image. Please try a different photo.');
-        return;
-      }
-
-      setGenerationError('');
-
-      setUploadedImages((previousImages) => {
-        const nextImages = [...previousImages];
-        const existingImage = nextImages[index];
-
-        revokeImageUrl(existingImage);
-
-        nextImages[index] = {
-          url: dataUrl,
-          isDataUrl: true,
-          name: file.name,
-        };
-
-        return nextImages;
-      });
-
-      setGeneratedImages((previousImages) => {
-        const nextImages = [...previousImages];
-        if (index >= 0 && index < nextImages.length) {
-          nextImages[index] = null;
+      };
+      reader.onload = () => {
+        const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+        if (!dataUrl) {
+          setGenerationError('Could not read that image. Please try a different photo.');
+          return;
         }
-        return nextImages;
-      });
-
-      // Pre-generation disabled — coloring pages are generated manually in admin after payment
+        setGenerationError('');
+        setUploadedImages((previousImages) => {
+          const nextImages = [...previousImages];
+          revokeImageUrl(nextImages[index]);
+          nextImages[index] = { url: dataUrl, isDataUrl: true, name };
+          return nextImages;
+        });
+        setGeneratedImages((previousImages) => {
+          const nextImages = [...previousImages];
+          if (index >= 0 && index < nextImages.length) nextImages[index] = null;
+          return nextImages;
+        });
+      };
+      reader.readAsDataURL(fileOrBlob);
     };
 
-    reader.readAsDataURL(file);
+    if (isHeic) {
+      import('heic2any')
+        .then(({ default: heic2any }) => heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 }))
+        .then((converted) => {
+          const blob = Array.isArray(converted) ? converted[0] : converted;
+          const jpegName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+          readFileAsDataUrl(blob, jpegName);
+        })
+        .catch(() => {
+          // Conversion failed — fall back to reading as-is
+          readFileAsDataUrl(file, file.name);
+        });
+    } else {
+      readFileAsDataUrl(file, file.name);
+    }
   };
 
   const handleCreateBook = async () => {
@@ -1216,6 +1222,7 @@ function App() {
       backCoverDedication,
       dedicationPageText,
       coverNotes,
+      storyThemeId: selectedThemeId || null,
     };
   };
 
@@ -1447,6 +1454,8 @@ function App() {
         addOnQuantities={addOnQuantities}
         cartSummary={cartSummary}
         dedicationPageText={dedicationPageText}
+        selectedThemeId={selectedThemeId}
+        onSelectTheme={setSelectedThemeId}
         onSelectProduct={handleSelectProduct}
         onSelectPageCount={updatePageCount}
         onContinueToUploads={() => goToNextStep('customize')}
@@ -1475,6 +1484,7 @@ function App() {
         uploads={uploadedImages}
         selectedProduct={selectedProduct}
         cartSummary={cartSummary}
+        themeInspiration={selectedThemeId ? (STORY_THEMES.find(t => t.id === selectedThemeId)?.inspiration ?? DEFAULT_INSPIRATION) : DEFAULT_INSPIRATION}
         onUpload={handleUpload}
         onBack={goToPreviousStep}
         onCreateBook={handleCreateBook}
@@ -1547,7 +1557,23 @@ function App() {
 
   return (
     <main className="app-shell">
-      <div className="site-tagline-bar">Turn Your Memories Into a Legendary Story</div>
+      <div className="site-tagline-bar">
+        <span className="site-tagline-text">We Turn Your Memories Into a Legendary Story</span>
+        <a
+          href="https://www.instagram.com/twiceuponus"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="site-ig-link"
+          aria-label="Follow us on Instagram"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <circle cx="12" cy="12" r="4"/>
+            <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/>
+          </svg>
+          <span>@twiceuponus</span>
+        </a>
+      </div>
       <div className="configurator-shell">
         <aside className="configurator-sidebar">
           <div className="sidebar-auth">
@@ -1600,7 +1626,17 @@ function App() {
             <div className="builder-flow">{content}</div>
             <div className="page-watermark-wrap">
               <img src="/images/logo-title.png" alt="Twice Upon Us" className="page-watermark" />
-              <p className="page-watermark-desc">Personalized coloring books made from your photos</p>
+
+              <nav className="page-watermark-links">
+                <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a>
+                <span>·</span>
+                <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+                <span>·</span>
+                <a href="/refund-policy.html" target="_blank" rel="noopener noreferrer">Refund Policy</a>
+                <span>·</span>
+                <a href="/shipping-policy.html" target="_blank" rel="noopener noreferrer">Shipping Policy</a>
+              </nav>
+              <p className="page-watermark-copy">© 2025 Twice Upon Us. All rights reserved.</p>
             </div>
           </div>
         </div>

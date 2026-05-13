@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const LOGO_SRC = '/images/logo-stacked.png';
+const LOGO_SRC = '/images/book-icon.png';
 
 function BrandLogo({ className = '' }) {
   const [hasError, setHasError] = useState(false);

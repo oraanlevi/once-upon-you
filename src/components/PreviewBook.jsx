@@ -4,7 +4,6 @@ function PreviewBook({ uploads, pageCount, onBackToUploads, onFinishOrder }) {
       <div className="preview-shell preview-shell--focused">
 
         <div className="preview-top preview-top--focused">
-          <p className="builder-eyebrow">Step 3 of 3</p>
           <h2 id="preview-book-title">Review your photos.</h2>
           <p className="preview-note">
             Make sure everything looks right before you checkout. These are the photos we'll turn into your coloring book.

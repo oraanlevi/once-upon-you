@@ -230,8 +230,8 @@ function CheckoutPage({
                   shippingData={shippingData}
                   onCompletePaidOrder={onCompletePaidOrder}
                   cartSummary={cartSummary}
+                  displayTotalCents={promoResult ? Math.max(0, cartSummary.totalCents - promoResult.discountCents) : cartSummary.totalCents}
                   isProcessingPayment={isProcessingPayment}
-
                   paymentError={paymentError}
                 />
               </Elements>

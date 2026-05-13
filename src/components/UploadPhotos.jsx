@@ -18,6 +18,7 @@ function UploadPhotos({
   onBack,
   onCreateBook,
   generationError,
+  themeInspiration,
 }) {
   const bulkInputRef = useRef(null);
   const uploadedCount = uploads.filter(Boolean).length;
@@ -26,10 +27,26 @@ function UploadPhotos({
 
   const handleBulkSelect = (e) => {
     const files = Array.from(e.target.files || []).filter(isSupportedUploadFile);
-    if (files.length > pageCount) {
-      alert(`You selected ${files.length} photos but only need ${pageCount}. We'll use the first ${pageCount}.`);
+    if (!files.length) return;
+
+    // Find empty slots first, then filled slots as fallback
+    const emptySlots = [];
+    const filledSlots = [];
+    for (let i = 0; i < pageCount; i++) {
+      if (!uploads[i]) emptySlots.push(i);
+      else filledSlots.push(i);
     }
-    files.slice(0, pageCount).forEach((file, i) => onUpload(i, file));
+    const slots = [...emptySlots, ...filledSlots];
+    const remaining = pageCount - uploadedCount;
+
+    if (files.length > remaining && remaining > 0) {
+      // More files than empty slots — fill what's left, warn if even more than total
+    }
+    if (files.length > pageCount) {
+      alert(`You selected ${files.length} photos but the book only has ${pageCount} pages. We'll use the first ${pageCount}.`);
+    }
+
+    files.slice(0, slots.length).forEach((file, i) => onUpload(slots[i], file));
     e.target.value = '';
   };
 
@@ -40,12 +57,21 @@ function UploadPhotos({
         {/* ── Header ── */}
         <div className="upload-top upload-top--focused">
           <button type="button" className="upload-back" onClick={onBack}>← Back</button>
-          <p className="builder-eyebrow">Step 2 of 3</p>
           <h2 id="upload-step-title">Upload your photos</h2>
-          <p className="builder-lede upload-intro">
-            Each photo becomes its own coloring page.
+          <p className="upload-meta">
+            {uploadedCount > 0
+              ? `${uploadedCount} of ${pageCount} photos added`
+              : `Each photo becomes its own coloring page.`}
           </p>
         </div>
+
+        {/* ── Theme inspiration ── */}
+        {themeInspiration && (
+          <div className="upload-inspiration-box">
+            <span className="upload-inspiration-icon" aria-hidden="true">✦</span>
+            <p className="upload-inspiration-text">{themeInspiration}</p>
+          </div>
+        )}
 
         {/* ── Bulk upload zone ── */}
         <input
@@ -76,7 +102,7 @@ function UploadPhotos({
               <div className="upload-progress-bar-fill" style={{ width: `${pct}%` }} />
             </div>
             <span className="upload-progress-bar-label">
-              {uploadedCount} of {pageCount} photos ready
+              {uploadedCount} / {pageCount}
             </span>
           </div>
         )}
@@ -84,7 +110,6 @@ function UploadPhotos({
         {generationError && <p className="generation-error">{generationError}</p>}
 
         {/* ── Individual slots ── */}
-        <div className="upload-slots-label">Or upload one by one</div>
         <div className="upload-grid upload-grid--focused">
           {uploads.map((image, index) => (
             <UploadCard

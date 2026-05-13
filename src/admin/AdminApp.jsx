@@ -3,6 +3,16 @@ import { useEffect, useState } from 'react';
 const API = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001').trim().replace(/\/+$/, '');
 const TOKEN_KEY = 'ouy_admin_token';
 
+const THEME_LABELS = {
+  'beach-days': 'Beach Days',
+  'best-friends': 'Best Friends',
+  'love-story': 'Love Story',
+  'pet-memories': 'Pet Memories',
+  'baby-family': 'Family',
+  'travel-story': 'Travel Story',
+  'mood-board': 'Mood Board',
+};
+
 const STATUS_COLORS = {
   new: '#6366f1',
   'in-production': '#f59e0b',
@@ -195,6 +205,12 @@ function OrderRow({ order, token, onStatusChange }) {
                   </p>
                 )}
               </div>
+              {order.storyThemeId && (
+                <div>
+                  <p style={styles.expandedLabel}>Story Theme</p>
+                  <p style={styles.expandedValue}>{THEME_LABELS[order.storyThemeId] || order.storyThemeId}</p>
+                </div>
+              )}
               <div>
                 <p style={styles.expandedLabel}>Shipping Address</p>
                 <p style={styles.expandedValue}>
