@@ -130,9 +130,9 @@ function AccountPage({ user, token, apiBase, onLogout, onClose, onShippingSaved 
             </div>
           ) : orders.length === 0 ? (
             <div className="account-empty-state">
-              <div className="account-empty-icon">📚</div>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(116,70,149,0.25)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
               <h3>No orders yet</h3>
-              <p>Your book orders will appear here once you place one.</p>
+              <p>Your orders will show up here once you place one.</p>
               <button type="button" className="account-cta-btn" onClick={onClose}>
                 Start Building →
               </button>

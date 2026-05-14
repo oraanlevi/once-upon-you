@@ -3651,26 +3651,25 @@ button.top-progress-chip {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 60px 20px;
-  gap: 10px;
+  padding: 56px 20px 48px;
+  gap: 6px;
 }
 
-.account-empty-icon {
-  font-size: 48px;
-  margin-bottom: 8px;
+.account-empty-state svg {
+  margin-bottom: 12px;
 }
 
 .account-empty-state h3 {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 650;
   color: var(--ui-text);
   margin: 0;
 }
 
 .account-empty-state p {
-  font-size: 14px;
-  color: rgba(79, 66, 85, 0.55);
-  margin: 0 0 16px;
+  font-size: 13.5px;
+  color: rgba(79, 66, 85, 0.45);
+  margin: 0 0 20px;
 }
 
 .account-cta-btn {
