@@ -2091,23 +2091,67 @@ app.post('/api/orders/complete', async (req, res) => {
         to: customerEmail,
         subject: `Your order is confirmed ♡ (#${orderId})`,
         text: `Hi ${customerName},\n\nYour custom coloring book is officially in the works ♡\nWe're carefully creating it now and it will ship within 5 business days.\n\nOrder: #${orderId}\nEstimated delivery: ${deliveryEstimate}\n${loyaltyCode ? `\n🎁 As a Premium customer, here's 10% off your next order: ${loyaltyCode}\n` : ''}\nIf you need anything, just reply here or email us anytime.\n\nWith love,\nTwice Upon Us`,
-        html: brandedEmail(`
-          <h2 style="margin:0 0 6px;font-size:22px;font-weight:700;color:#7446a0">Hi ${customerName} ♡</h2>
-          <p style="font-size:15px;line-height:1.7;color:#4f4255;margin:0 0 24px">Your custom coloring book is officially in the works!<br>We're carefully creating it now and it will ship within 5 business days.</p>
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf6ff;border-radius:12px;margin:0 0 24px;font-size:14px;border:1px solid #e8dff5">
-            <tr><td style="padding:10px 16px;color:#9e8aac;border-bottom:1px solid #f0eaf8">Order</td><td style="padding:10px 16px;font-weight:700;border-bottom:1px solid #f0eaf8">#${orderId}</td></tr>
-            <tr><td style="padding:10px 16px;color:#9e8aac;border-bottom:1px solid #f0eaf8">Estimated delivery</td><td style="padding:10px 16px;font-weight:600;border-bottom:1px solid #f0eaf8">${deliveryEstimate}</td></tr>
-            ${totalFormatted ? `<tr><td style="padding:10px 16px;color:#9e8aac">Total paid</td><td style="padding:10px 16px;font-weight:700;color:#7446a0">${totalFormatted}</td></tr>` : ''}
-          </table>
-          ${loyaltyCode ? `
-          <div style="background:#f5f0ff;border:1.5px solid #c4a8f0;border-radius:12px;padding:18px 22px;margin:0 0 24px">
-            <p style="margin:0 0 4px;font-weight:700;color:#7446a0;font-size:14px">🎁 Your Premium loyalty reward</p>
-            <p style="margin:0 0 10px;font-size:13px;color:#7c6f8e">Here's 10% off your next order:</p>
-            <p style="margin:0;font-size:24px;font-weight:800;letter-spacing:0.12em;color:#7446a0">${loyaltyCode}</p>
-          </div>` : ''}
-          <p style="font-size:14px;color:#4f4255;line-height:1.6;margin:0 0 20px">If you need anything, just reply to this email — we're always happy to help.</p>
-          <p style="font-size:14px;color:#1e0e28;margin:0">With love,<br><strong style="color:#7446a0">The Twice Upon Us Team</strong></p>
-        `),
+        html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f7f7f5;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f7f5;padding:40px 16px">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
+
+  <!-- Wordmark -->
+  <tr><td style="padding:0 0 40px">
+    <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.18em;color:#1a1a1a;text-transform:uppercase">Twice Upon Us</p>
+  </td></tr>
+
+  <!-- Hero -->
+  <tr><td style="padding:0 0 40px;border-bottom:1px solid #e0e0e0">
+    <p style="margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:0.14em;color:#999;text-transform:uppercase">Order Confirmed</p>
+    <h1 style="margin:0 0 16px;font-size:32px;font-weight:700;line-height:1.2;color:#1a1a1a">Your coloring book<br>is in the works, ${customerName}.</h1>
+    <p style="margin:0;font-size:15px;color:#666;line-height:1.6">We're carefully crafting it now and it will ship within 5 business days.</p>
+  </td></tr>
+
+  <!-- Order details -->
+  <tr><td style="padding:0">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:20px 0;border-bottom:1px solid #e8e8e8">
+        <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.14em;color:#999;text-transform:uppercase">Order</p>
+        <p style="margin:0;font-size:14px;font-family:'Courier New',Courier,monospace;color:#1a1a1a">#${orderId}</p>
+      </td></tr>
+      <tr><td style="padding:20px 0;border-bottom:1px solid #e8e8e8">
+        <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.14em;color:#999;text-transform:uppercase">Est. Delivery</p>
+        <p style="margin:0;font-size:14px;color:#1a1a1a;font-weight:500">${deliveryEstimate}</p>
+      </td></tr>
+      ${totalFormatted ? `<tr><td style="padding:20px 0;border-bottom:1px solid #e8e8e8">
+        <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.14em;color:#999;text-transform:uppercase">Total Paid</p>
+        <p style="margin:0;font-size:14px;color:#1a1a1a;font-weight:600">${totalFormatted}</p>
+      </td></tr>` : ''}
+    </table>
+  </td></tr>
+
+  <!-- Loyalty reward -->
+  ${loyaltyCode ? `<tr><td style="padding:32px 0 0">
+    <div style="background:#f0eeff;border-radius:12px;padding:22px 24px">
+      <p style="margin:0 0 8px;font-size:10px;font-weight:700;letter-spacing:0.14em;color:#7446a0;text-transform:uppercase">Premium Reward — 10% off next order</p>
+      <p style="margin:0;font-size:22px;font-weight:800;letter-spacing:0.1em;color:#1a1a1a;font-family:'Courier New',Courier,monospace">${loyaltyCode}</p>
+    </div>
+  </td></tr>` : ''}
+
+  <!-- Footer note -->
+  <tr><td style="padding:40px 0 0">
+    <p style="margin:0;font-size:14px;color:#666;line-height:1.7">Reply to this email with any questions — we're always happy to help.<br>With love, <a href="https://twiceuponus.com" style="color:#7446a0;text-decoration:none">The Twice Upon Us Team</a></p>
+  </td></tr>
+
+  <!-- Bottom -->
+  <tr><td style="padding:40px 0 0">
+    <p style="margin:0;font-size:11px;color:#bbb">© 2025 Twice Upon Us · <a href="https://twiceuponus.com" style="color:#bbb;text-decoration:none">twiceuponus.com</a></p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`,
       }).catch((e) => console.error('[EMAIL] Customer confirmation failed:', e.message));
     }
 
