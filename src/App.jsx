@@ -1603,9 +1603,7 @@ function App() {
                 <span className="sidebar-auth-avatar">
                   {[authUser.firstName?.charAt(0), authUser.lastName?.charAt(0)].filter(Boolean).join('').toUpperCase() || authUser.email?.charAt(0)?.toUpperCase() || 'U'}
                 </span>
-                <span className="sidebar-auth-name">
-                  {authUser.firstName ? `${authUser.firstName}${authUser.lastName ? ' ' + authUser.lastName.charAt(0) + '.' : ''}` : 'My Account'}
-                </span>
+                <span className="sidebar-auth-name">Profile</span>
               </button>
             ) : (
               <button
@@ -1664,11 +1662,10 @@ function App() {
 
         <button type="button" className="support-widget" onClick={() => setShowContactModal(true)}>
           <span className="support-avatar" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </span>
           <span className="support-copy">
-            <strong>Need Help?</strong>
-            <span>Send us a message.</span>
+            <strong>Need help?</strong>
           </span>
         </button>
       </div>
