@@ -1433,7 +1433,23 @@ function App() {
 
   let content;
 
-  if (introStage === 'cover' || introStage === 'opening') {
+  if (showAccountPage && authUser) {
+    content = (
+      <AccountPage
+        user={authUser}
+        token={authToken}
+        apiBase={API_BASE_URL}
+        onClose={() => setShowAccountPage(false)}
+        onLogout={handleLogout}
+        onShippingSaved={(savedShipping) => {
+          setAuthUser((prev) => ({ ...prev, savedShipping }));
+          if (savedShipping?.address || savedShipping?.email) {
+            setShippingData((prev) => ({ ...prev, ...savedShipping }));
+          }
+        }}
+      />
+    );
+  } else if (introStage === 'cover' || introStage === 'opening') {
     content = (
       <BookCover
         isOpening={introStage === 'opening'}
@@ -1697,21 +1713,6 @@ function App() {
         />
       )}
 
-      {showAccountPage && authUser && (
-        <AccountPage
-          user={authUser}
-          token={authToken}
-          apiBase={API_BASE_URL}
-          onClose={() => setShowAccountPage(false)}
-          onLogout={handleLogout}
-          onShippingSaved={(savedShipping) => {
-            setAuthUser((prev) => ({ ...prev, savedShipping }));
-            if (savedShipping?.address || savedShipping?.email) {
-              setShippingData((prev) => ({ ...prev, ...savedShipping }));
-            }
-          }}
-        />
-      )}
 
       {showContactModal && (
         <ContactModal onClose={() => setShowContactModal(false)} />

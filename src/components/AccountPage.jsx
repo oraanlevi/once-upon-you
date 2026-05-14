@@ -77,163 +77,151 @@ function AccountPage({ user, token, apiBase, onLogout, onClose, onShippingSaved 
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="account-page-backdrop" onClick={onClose}>
-      <div className="account-page" onClick={(e) => e.stopPropagation()}>
+    <section className="account-inline-page">
 
-        {/* ── Sidebar ── */}
-        <aside className="account-sidebar">
-          <div className="account-sidebar-top">
-            <div className="account-page-avatar">{initials}</div>
+      {/* ── Top bar ── */}
+      <div className="account-inline-topbar">
+        <button type="button" className="account-inline-back" onClick={onClose}>
+          ← Back
+        </button>
+        <h1 className="account-inline-title">My Account</h1>
+        <button type="button" className="account-logout-inline" onClick={onLogout}>
+          Log out
+        </button>
+      </div>
+
+      <div className="account-inline-body">
+
+        {/* ── Profile card ── */}
+        <div className="account-profile-card">
+          <div className="account-page-avatar">{initials}</div>
+          <div>
             <div className="account-sidebar-name">{displayName}</div>
             <div className="account-sidebar-email">{user?.email}</div>
           </div>
+        </div>
 
-          <nav className="account-nav">
-            <button
-              type="button"
-              className={`account-nav-item${activeTab === 'orders' ? ' is-active' : ''}`}
-              onClick={() => setActiveTab('orders')}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
-              My Orders
-            </button>
-            <button
-              type="button"
-              className={`account-nav-item${activeTab === 'shipping' ? ' is-active' : ''}`}
-              onClick={() => setActiveTab('shipping')}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              Saved Shipping
-            </button>
-          </nav>
+        {/* ── Tabs ── */}
+        <div className="account-inline-tabs">
+          <button
+            type="button"
+            className={`account-inline-tab${activeTab === 'orders' ? ' is-active' : ''}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+            My Orders
+          </button>
+          <button
+            type="button"
+            className={`account-inline-tab${activeTab === 'shipping' ? ' is-active' : ''}`}
+            onClick={() => setActiveTab('shipping')}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Saved Shipping
+          </button>
+        </div>
 
-          <div className="account-sidebar-footer">
-            <button type="button" className="account-logout-btn" onClick={onLogout}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-              Log out
-            </button>
-          </div>
-        </aside>
-
-        {/* ── Main content ── */}
-        <main className="account-main">
-          <div className="account-main-header">
-            <div>
-              <h1 className="account-main-title">
-                {activeTab === 'orders' ? 'My Orders' : 'Saved Shipping'}
-              </h1>
-              <p className="account-main-sub">
-                {activeTab === 'orders'
-                  ? 'Track and manage your book orders.'
-                  : 'Your saved address will pre-fill at checkout.'}
-              </p>
+        {/* ── Orders ── */}
+        {activeTab === 'orders' && (
+          ordersLoading ? (
+            <div className="account-loading">
+              <div className="account-loading-spinner" />
+              <p>Loading your orders…</p>
             </div>
-            <button type="button" className="account-page-close" onClick={onClose} aria-label="Close">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
+          ) : orders.length === 0 ? (
+            <div className="account-empty-state">
+              <div className="account-empty-icon">📚</div>
+              <h3>No orders yet</h3>
+              <p>Your book orders will appear here once you place one.</p>
+              <button type="button" className="account-cta-btn" onClick={onClose}>
+                Start Building →
+              </button>
+            </div>
+          ) : (
+            <div className="account-orders-grid">
+              {orders.map((order) => (
+                <div key={order.orderId} className="account-order-card">
+                  <div className="account-order-top">
+                    <div>
+                      <div className="account-order-id">#{order.orderId}</div>
+                      <div className="account-order-date">{formatDate(order.createdAt)}</div>
+                    </div>
+                    <span className={`account-order-status ${STATUS_COLORS[order.status] || ''}`}>
+                      {STATUS_LABELS[order.status] || order.status}
+                    </span>
+                  </div>
+                  <div className="account-order-product">
+                    <span className="account-order-product-name">{order.product?.name || 'Custom Book'}</span>
+                    <span className="account-order-product-meta">{order.pageCount} pages</span>
+                  </div>
+                  <div className="account-order-footer">
+                    {order.shipping?.address && (
+                      <span className="account-order-shipping">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                        {order.shipping.city}, {order.shipping.postalCode}
+                      </span>
+                    )}
+                    {order.deliveryEstimate && (
+                      <span className="account-order-delivery">Est. {order.deliveryEstimate}</span>
+                    )}
+                    {order.pricing?.totalCents ? (
+                      <span className="account-order-total">{formatCents(order.pricing.totalCents)}</span>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        )}
 
-          <div className="account-main-body">
-            {activeTab === 'orders' && (
-              ordersLoading ? (
-                <div className="account-loading">
-                  <div className="account-loading-spinner" />
-                  <p>Loading your orders…</p>
+        {/* ── Shipping ── */}
+        {activeTab === 'shipping' && (
+          <div className="account-shipping-section">
+            <form className="account-shipping-form" onSubmit={handleShippingSave}>
+              <div className="auth-field-row">
+                <div className="auth-field">
+                  <label className="auth-label">First name</label>
+                  <input className="auth-input" value={shipping.firstName || ''} onChange={(e) => handleShippingChange('firstName', e.target.value)} placeholder="Jane" />
                 </div>
-              ) : orders.length === 0 ? (
-                <div className="account-empty-state">
-                  <div className="account-empty-icon">📚</div>
-                  <h3>No orders yet</h3>
-                  <p>Your book orders will appear here once you place one.</p>
-                  <button type="button" className="account-cta-btn" onClick={onClose}>
-                    Start Building →
-                  </button>
+                <div className="auth-field">
+                  <label className="auth-label">Last name</label>
+                  <input className="auth-input" value={shipping.lastName || ''} onChange={(e) => handleShippingChange('lastName', e.target.value)} placeholder="Smith" />
                 </div>
-              ) : (
-                <div className="account-orders-grid">
-                  {orders.map((order) => (
-                    <div key={order.orderId} className="account-order-card">
-                      <div className="account-order-top">
-                        <div>
-                          <div className="account-order-id">#{order.orderId}</div>
-                          <div className="account-order-date">{formatDate(order.createdAt)}</div>
-                        </div>
-                        <span className={`account-order-status ${STATUS_COLORS[order.status] || ''}`}>
-                          {STATUS_LABELS[order.status] || order.status}
-                        </span>
-                      </div>
-                      <div className="account-order-product">
-                        <span className="account-order-product-name">{order.product?.name || 'Custom Book'}</span>
-                        <span className="account-order-product-meta">{order.pageCount} pages</span>
-                      </div>
-                      <div className="account-order-footer">
-                        {order.shipping?.address && (
-                          <span className="account-order-shipping">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                            {order.shipping.city}, {order.shipping.postalCode}
-                          </span>
-                        )}
-                        {order.deliveryEstimate && (
-                          <span className="account-order-delivery">Est. {order.deliveryEstimate}</span>
-                        )}
-                        {order.pricing?.totalCents ? (
-                          <span className="account-order-total">{formatCents(order.pricing.totalCents)}</span>
-                        ) : null}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-
-            {activeTab === 'shipping' && (
-              <div className="account-shipping-section">
-                <form className="account-shipping-form" onSubmit={handleShippingSave}>
-                  <div className="auth-field-row">
-                    <div className="auth-field">
-                      <label className="auth-label">First name</label>
-                      <input className="auth-input" value={shipping.firstName || ''} onChange={(e) => handleShippingChange('firstName', e.target.value)} placeholder="Jane" />
-                    </div>
-                    <div className="auth-field">
-                      <label className="auth-label">Last name</label>
-                      <input className="auth-input" value={shipping.lastName || ''} onChange={(e) => handleShippingChange('lastName', e.target.value)} placeholder="Smith" />
-                    </div>
-                  </div>
-                  <div className="auth-field">
-                    <label className="auth-label">Email</label>
-                    <input className="auth-input" type="email" value={shipping.email || ''} onChange={(e) => handleShippingChange('email', e.target.value)} placeholder="you@example.com" />
-                  </div>
-                  <div className="auth-field">
-                    <label className="auth-label">Street address</label>
-                    <input className="auth-input" value={shipping.address || ''} onChange={(e) => handleShippingChange('address', e.target.value)} placeholder="123 Main St" />
-                  </div>
-                  <div className="auth-field-row">
-                    <div className="auth-field">
-                      <label className="auth-label">City</label>
-                      <input className="auth-input" value={shipping.city || ''} onChange={(e) => handleShippingChange('city', e.target.value)} placeholder="New York" />
-                    </div>
-                    <div className="auth-field">
-                      <label className="auth-label">Postal code</label>
-                      <input className="auth-input" value={shipping.postalCode || ''} onChange={(e) => handleShippingChange('postalCode', e.target.value)} placeholder="10001" />
-                    </div>
-                  </div>
-                  <div className="auth-field">
-                    <label className="auth-label">Country</label>
-                    <input className="auth-input" value={shipping.country || ''} onChange={(e) => handleShippingChange('country', e.target.value)} placeholder="United States" />
-                  </div>
-                  {shippingMsg && (
-                    <p className={shippingMsg === 'Saved!' ? 'account-save-success' : 'auth-error'}>{shippingMsg}</p>
-                  )}
-                  <button type="submit" className="auth-submit" disabled={shippingSaving}>
-                    {shippingSaving ? 'Saving…' : 'Save Shipping Details'}
-                  </button>
-                </form>
               </div>
-            )}
+              <div className="auth-field">
+                <label className="auth-label">Email</label>
+                <input className="auth-input" type="email" value={shipping.email || ''} onChange={(e) => handleShippingChange('email', e.target.value)} placeholder="you@example.com" />
+              </div>
+              <div className="auth-field">
+                <label className="auth-label">Street address</label>
+                <input className="auth-input" value={shipping.address || ''} onChange={(e) => handleShippingChange('address', e.target.value)} placeholder="123 Main St" />
+              </div>
+              <div className="auth-field-row">
+                <div className="auth-field">
+                  <label className="auth-label">City</label>
+                  <input className="auth-input" value={shipping.city || ''} onChange={(e) => handleShippingChange('city', e.target.value)} placeholder="New York" />
+                </div>
+                <div className="auth-field">
+                  <label className="auth-label">Postal code</label>
+                  <input className="auth-input" value={shipping.postalCode || ''} onChange={(e) => handleShippingChange('postalCode', e.target.value)} placeholder="10001" />
+                </div>
+              </div>
+              <div className="auth-field">
+                <label className="auth-label">Country</label>
+                <input className="auth-input" value={shipping.country || ''} onChange={(e) => handleShippingChange('country', e.target.value)} placeholder="United States" />
+              </div>
+              {shippingMsg && (
+                <p className={shippingMsg === 'Saved!' ? 'account-save-success' : 'auth-error'}>{shippingMsg}</p>
+              )}
+              <button type="submit" className="auth-submit" disabled={shippingSaving}>
+                {shippingSaving ? 'Saving…' : 'Save Shipping Details'}
+              </button>
+            </form>
           </div>
-        </main>
+        )}
+
       </div>
-    </div>
+    </section>
   );
 }
 
