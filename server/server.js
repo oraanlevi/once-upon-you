@@ -2091,24 +2091,23 @@ app.post('/api/orders/complete', async (req, res) => {
         to: customerEmail,
         subject: `Your order is confirmed ♡ (#${orderId})`,
         text: `Hi ${customerName},\n\nYour custom coloring book is officially in the works ♡\nWe're carefully creating it now and it will ship within 5 business days.\n\nOrder: #${orderId}\nEstimated delivery: ${deliveryEstimate}\n${loyaltyCode ? `\n🎁 As a Premium customer, here's 10% off your next order: ${loyaltyCode}\n` : ''}\nIf you need anything, just reply here or email us anytime.\n\nWith love,\nTwice Upon Us`,
-        html: `
-          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1e0e28;padding:32px 24px">
-            <h2 style="color:#7446a0;margin:0 0 8px">Hi ${customerName} ♡</h2>
-            <p style="font-size:16px;line-height:1.6;margin:0 0 24px">Your custom coloring book is officially in the works ♡<br>We're carefully creating it now and it will ship within 5 business days.</p>
-            <table style="width:100%;border-collapse:collapse;margin:0 0 24px;font-size:14px;background:#faf8ff;border-radius:12px;padding:16px">
-              <tr><td style="padding:8px 12px;color:#7c6f8e">Order</td><td style="padding:8px 12px;font-weight:700">#${orderId}</td></tr>
-              <tr><td style="padding:8px 12px;color:#7c6f8e">Estimated delivery</td><td style="padding:8px 12px;font-weight:600">${deliveryEstimate}</td></tr>
-              ${totalFormatted ? `<tr><td style="padding:8px 12px;color:#7c6f8e">Total</td><td style="padding:8px 12px;font-weight:600">${totalFormatted}</td></tr>` : ''}
-            </table>
-            ${loyaltyCode ? `
-            <div style="background:#f5f0ff;border:1px solid #c4a8f0;border-radius:10px;padding:16px 20px;margin:0 0 24px">
-              <p style="margin:0 0 6px;font-weight:700;color:#7446a0">🎁 Your Premium loyalty reward</p>
-              <p style="margin:0 0 10px;font-size:14px;color:#4f4255">Here's 10% off your next order:</p>
-              <p style="margin:0;font-size:22px;font-weight:800;letter-spacing:0.1em;color:#7446a0">${loyaltyCode}</p>
-            </div>` : ''}
-            <p style="font-size:14px;color:#4f4255;line-height:1.6">If you need anything, just reply here or email us anytime.</p>
-            <p style="font-size:14px;color:#1e0e28;margin-top:24px">With love,<br><strong>Twice Upon Us</strong></p>
-          </div>`,
+        html: brandedEmail(`
+          <h2 style="margin:0 0 6px;font-size:22px;font-weight:700;color:#7446a0">Hi ${customerName} ♡</h2>
+          <p style="font-size:15px;line-height:1.7;color:#4f4255;margin:0 0 24px">Your custom coloring book is officially in the works!<br>We're carefully creating it now and it will ship within 5 business days.</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf6ff;border-radius:12px;margin:0 0 24px;font-size:14px;border:1px solid #e8dff5">
+            <tr><td style="padding:10px 16px;color:#9e8aac;border-bottom:1px solid #f0eaf8">Order</td><td style="padding:10px 16px;font-weight:700;border-bottom:1px solid #f0eaf8">#${orderId}</td></tr>
+            <tr><td style="padding:10px 16px;color:#9e8aac;border-bottom:1px solid #f0eaf8">Estimated delivery</td><td style="padding:10px 16px;font-weight:600;border-bottom:1px solid #f0eaf8">${deliveryEstimate}</td></tr>
+            ${totalFormatted ? `<tr><td style="padding:10px 16px;color:#9e8aac">Total paid</td><td style="padding:10px 16px;font-weight:700;color:#7446a0">${totalFormatted}</td></tr>` : ''}
+          </table>
+          ${loyaltyCode ? `
+          <div style="background:#f5f0ff;border:1.5px solid #c4a8f0;border-radius:12px;padding:18px 22px;margin:0 0 24px">
+            <p style="margin:0 0 4px;font-weight:700;color:#7446a0;font-size:14px">🎁 Your Premium loyalty reward</p>
+            <p style="margin:0 0 10px;font-size:13px;color:#7c6f8e">Here's 10% off your next order:</p>
+            <p style="margin:0;font-size:24px;font-weight:800;letter-spacing:0.12em;color:#7446a0">${loyaltyCode}</p>
+          </div>` : ''}
+          <p style="font-size:14px;color:#4f4255;line-height:1.6;margin:0 0 20px">If you need anything, just reply to this email — we're always happy to help.</p>
+          <p style="font-size:14px;color:#1e0e28;margin:0">With love,<br><strong style="color:#7446a0">The Twice Upon Us Team</strong></p>
+        `),
       }).catch((e) => console.error('[EMAIL] Customer confirmation failed:', e.message));
     }
 
@@ -2155,7 +2154,8 @@ app.use((error, _req, res, _next) => {
 const JWT_SECRET = normalizeEnvValue(process.env.JWT_SECRET) || 'twice-upon-us-dev-secret-change-in-prod';
 const JWT_EXPIRES_IN = '30d';
 const APP_BASE_URL = normalizeEnvValue(process.env.APP_BASE_URL || 'http://localhost:5174');
-const FROM_EMAIL = normalizeEnvValue(process.env.RESEND_FROM || process.env.SMTP_FROM || 'Once Upon You <onboarding@resend.dev>');
+const FROM_EMAIL = normalizeEnvValue(process.env.RESEND_FROM || process.env.SMTP_FROM || 'Twice Upon Us <onboarding@resend.dev>');
+const REPLY_TO_EMAIL = 'twiceuponus@gmail.com';
 
 // ─── Email ────────────────────────────────────────────────────────────────────
 
@@ -2168,10 +2168,43 @@ if (resendClient) {
   console.log('[EMAIL] No email provider configured — emails will be logged to console only.');
 }
 
-async function sendEmail({ to, subject, html, text }) {
+function brandedEmail(bodyHtml) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f0fb;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f0fb;padding:32px 16px">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px">
+
+        <!-- Header -->
+        <tr><td style="background:linear-gradient(135deg,#7446a0 0%,#9b59b6 100%);border-radius:16px 16px 0 0;padding:32px 40px;text-align:center">
+          <img src="https://twiceuponus.com/images/logo-stacked.png" alt="Twice Upon Us" width="120" style="display:block;margin:0 auto;max-width:120px" />
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="background:#ffffff;padding:36px 40px;border-radius:0 0 16px 16px;color:#1e0e28">
+          ${bodyHtml}
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding:20px 40px;text-align:center">
+          <p style="margin:0;font-size:12px;color:#9e8aac">© 2025 Twice Upon Us · <a href="https://twiceuponus.com" style="color:#7446a0;text-decoration:none">twiceuponus.com</a></p>
+          <p style="margin:6px 0 0;font-size:12px;color:#b8a8c8">Questions? Reply to this email or reach us at <a href="mailto:twiceuponus@gmail.com" style="color:#7446a0;text-decoration:none">twiceuponus@gmail.com</a></p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+async function sendEmail({ to, subject, html, text, replyTo }) {
   if (resendClient) {
     try {
-      await resendClient.emails.send({ from: FROM_EMAIL, to, subject, html, text });
+      const payload = { from: FROM_EMAIL, to, subject, html, text, reply_to: replyTo || REPLY_TO_EMAIL };
+      await resendClient.emails.send(payload);
       console.log('[EMAIL] Sent:', subject, '->', to);
     } catch (err) {
       console.error('[EMAIL] Failed to send:', err.message);
@@ -2350,13 +2383,16 @@ app.post('/api/auth/forgot-password', express.json(), async (req, res) => {
         to: normalizedEmail,
         subject: 'Reset your Twice Upon Us password',
         text: `Hi,\n\nClick the link below to reset your password (expires in 1 hour):\n\n${resetLink}\n\nIf you didn't request this, ignore this email.\n\nTwice Upon Us`,
-        html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;color:#1e0e28">
-            <h2 style="color:#7446a0">Reset your password</h2>
-            <p>Click below to set a new password. This link expires in <strong>1 hour</strong>.</p>
-            <a href="${resetLink}" style="display:inline-block;margin:20px 0;padding:12px 24px;background:#7446a0;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Reset Password</a>
-            <p style="color:#888;font-size:12px">If you didn't request this, you can safely ignore this email.</p>
-          </div>`,
+        html: brandedEmail(`
+          <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1e0e28">Reset your password</h2>
+          <p style="font-size:15px;color:#4f4255;line-height:1.6;margin:0 0 28px">Click below to set a new password. This link expires in <strong>1 hour</strong>.</p>
+          <table cellpadding="0" cellspacing="0" style="margin:0 0 28px">
+            <tr><td style="border-radius:10px;background:#7446a0">
+              <a href="${resetLink}" style="display:inline-block;padding:14px 32px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;border-radius:10px">Reset Password →</a>
+            </td></tr>
+          </table>
+          <p style="font-size:13px;color:#9e8aac;margin:0">If you didn't request this, you can safely ignore this email.</p>
+        `),
       });
     }
 
@@ -2544,20 +2580,17 @@ app.post('/api/corporate-quote', upload.fields([{ name: 'photos', maxCount: 10 }
     </div>
   `;
 
-  const clientHtml = `
-    <div style="font-family:sans-serif;max-width:520px;color:#1e0e28">
-      <h2 style="color:#7446a0">We received your quote request!</h2>
-      <p style="font-size:15px;line-height:1.6">Hi ${safeName}, thanks for reaching out to Twice Upon Us. We've received your corporate order request for <strong>${safeQuantity} ${safeFormat}s</strong> and will be in touch within 1–2 business days to confirm your quote.</p>
-      <table style="width:100%;font-size:14px;border-collapse:collapse;margin:20px 0;background:#f5f0ff;border-radius:10px;padding:16px">
-        <tr><td style="padding:6px 12px;color:#888;width:120px">Format</td><td>${safeFormat}</td></tr>
-        <tr><td style="padding:6px 12px;color:#888">Pages</td><td>${safePageCount} pages</td></tr>
-        <tr><td style="padding:6px 12px;color:#888">Quantity</td><td>${safeQuantity} books</td></tr>
-        <tr><td style="padding:6px 12px;color:#888">Est. Total</td><td><strong>${estimatedTotal}</strong></td></tr>
-      </table>
-      <p style="font-size:14px;color:#61506e">Questions? Reply to this email or reach us at twiceuponus@gmail.com</p>
-      <p style="font-size:13px;color:#aaa;margin-top:24px">— The Twice Upon Us Team</p>
-    </div>
-  `;
+  const clientHtml = brandedEmail(`
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#7446a0">We received your quote!</h2>
+    <p style="font-size:15px;line-height:1.6;color:#4f4255;margin:0 0 24px">Hi ${safeName}, thanks for reaching out. We've received your corporate order request for <strong>${safeQuantity} ${safeFormat}s</strong> and will be in touch within 1–2 business days to confirm your quote.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf6ff;border-radius:12px;margin:0 0 24px;font-size:14px;border:1px solid #e8dff5">
+      <tr><td style="padding:10px 16px;color:#9e8aac;border-bottom:1px solid #f0eaf8">Format</td><td style="padding:10px 16px;border-bottom:1px solid #f0eaf8">${safeFormat}</td></tr>
+      <tr><td style="padding:10px 16px;color:#9e8aac;border-bottom:1px solid #f0eaf8">Pages</td><td style="padding:10px 16px;border-bottom:1px solid #f0eaf8">${safePageCount} pages</td></tr>
+      <tr><td style="padding:10px 16px;color:#9e8aac;border-bottom:1px solid #f0eaf8">Quantity</td><td style="padding:10px 16px;border-bottom:1px solid #f0eaf8">${safeQuantity} books</td></tr>
+      <tr><td style="padding:10px 16px;color:#9e8aac">Est. Total</td><td style="padding:10px 16px;font-weight:700;color:#7446a0">${estimatedTotal}</td></tr>
+    </table>
+    <p style="font-size:14px;color:#4f4255;margin:0">Questions? Just reply to this email — we'd love to help.</p>
+  `);
 
   try {
     await sendEmail({
