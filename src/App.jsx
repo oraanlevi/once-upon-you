@@ -1600,7 +1600,6 @@ function App() {
                 className="sidebar-auth-btn sidebar-auth-btn--user"
                 onClick={() => setShowAccountPage(true)}
               >
-                <img src="/images/book-icon.png" alt="" aria-hidden="true" className="sidebar-profile-book" />
                 <span className="sidebar-auth-name">Profile</span>
               </button>
             ) : (
