@@ -3788,14 +3788,21 @@ button.top-progress-chip {
   gap: 20px;
 }
 
-.account-profile-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, #f9f4ff 0%, #f0e8fc 100%);
-  border: 1.5px solid rgba(116, 70, 149, 0.12);
-  border-radius: 16px;
+.account-greeting {
+  padding: 4px 0 8px;
+}
+
+.account-greeting-text {
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 750;
+  color: var(--ui-text);
+}
+
+.account-greeting-email {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(79, 66, 85, 0.45);
 }
 
 .account-inline-tabs {

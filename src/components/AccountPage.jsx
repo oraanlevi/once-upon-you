@@ -92,13 +92,10 @@ function AccountPage({ user, token, apiBase, onLogout, onClose, onShippingSaved 
 
       <div className="account-inline-body">
 
-        {/* ── Profile card ── */}
-        <div className="account-profile-card">
-          <div className="account-page-avatar">{initials}</div>
-          <div>
-            <div className="account-sidebar-name">{displayName}</div>
-            <div className="account-sidebar-email">{user?.email}</div>
-          </div>
+        {/* ── Greeting ── */}
+        <div className="account-greeting">
+          <h2 className="account-greeting-text">Hi, {user?.firstName || displayName} 👋</h2>
+          <p className="account-greeting-email">{user?.email}</p>
         </div>
 
         {/* ── Tabs ── */}
