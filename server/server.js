@@ -116,7 +116,9 @@ const STRIPE_CURRENCY = normalizeEnvValue(process.env.STRIPE_CURRENCY || 'usd').
 const CLIENT_ORIGIN = normalizeEnvValue(process.env.CLIENT_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map((o) => o.trim())
-  .filter(Boolean);
+  .filter(Boolean)
+  .concat(['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'])
+  .filter((v, i, a) => a.indexOf(v) === i); // dedupe
 
 const stripeKeyIsTest = STRIPE_SECRET_KEY.startsWith('sk_test_');
 const stripeKeyIsLive = STRIPE_SECRET_KEY.startsWith('sk_live_');
