@@ -1383,6 +1383,7 @@ function App() {
   };
 
   const handleNavigateStep = (stepKey) => {
+    setShowAccountPage(false);
     if (stepKey === 'cover') { setIntroStage('cover'); return; }
     if (stepKey === 'showcase') { setIntroStage('showcase'); return; }
     setIntroStage('done');
