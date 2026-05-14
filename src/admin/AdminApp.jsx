@@ -531,6 +531,85 @@ function ProductsTab({ token }) {
   );
 }
 
+// ─── Users Tab ────────────────────────────────────────────────────────────────
+
+function UsersTab({ token }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    fetch(`${API}/api/admin/users`, { headers: { 'x-admin-token': token } })
+      .then((r) => r.json())
+      .then((d) => setUsers(d.users || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const filtered = users.filter((u) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      u.email?.toLowerCase().includes(q) ||
+      u.firstName?.toLowerCase().includes(q) ||
+      u.lastName?.toLowerCase().includes(q)
+    );
+  });
+
+  if (loading) return <div style={styles.centered}>Loading users…</div>;
+
+  return (
+    <div style={{ padding: '0 0 40px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <p style={{ margin: 0, color: '#7c6f8e', fontSize: 14 }}>{users.length} registered account{users.length !== 1 ? 's' : ''}</p>
+        <input
+          type="search"
+          placeholder="Search by name or email…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={styles.searchInput}
+        />
+      </div>
+      {filtered.length === 0 ? (
+        <div style={styles.centered}>No users found.</div>
+      ) : (
+        <div style={styles.tableWrap}>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                {['Name', 'Email', 'Joined', 'Orders', 'Saved Address'].map((h) => (
+                  <th key={h} style={styles.th}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((u) => (
+                <tr key={u.id} style={styles.tr}>
+                  <td style={styles.td}>
+                    <strong>{[u.firstName, u.lastName].filter(Boolean).join(' ') || '—'}</strong>
+                  </td>
+                  <td style={styles.td}>{u.email}</td>
+                  <td style={styles.td}>{u.createdAt ? formatDate(u.createdAt) : '—'}</td>
+                  <td style={styles.td}>
+                    <span style={{ background: u.orderCount > 0 ? '#ede9fe' : '#f3f4f6', color: u.orderCount > 0 ? '#7c3aed' : '#9ca3af', borderRadius: 999, padding: '2px 10px', fontSize: 13, fontWeight: 600 }}>
+                      {u.orderCount}
+                    </span>
+                  </td>
+                  <td style={styles.td}>
+                    {u.savedShipping?.address
+                      ? `${u.savedShipping.address}, ${u.savedShipping.city} ${u.savedShipping.postalCode}`
+                      : <span style={{ color: '#bbb' }}>Not saved</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 function Dashboard({ token, onLogout }) {
@@ -601,12 +680,13 @@ function Dashboard({ token, onLogout }) {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        {[['orders', 'Orders'], ['products', 'Products']].map(([val, label]) => (
+        {[['orders', 'Orders'], ['products', 'Products'], ['users', 'Users']].map(([val, label]) => (
           <button key={val} onClick={() => setTab(val)} style={{ ...styles.pill, ...(tab === val ? styles.pillActive : {}) }}>{label}</button>
         ))}
       </div>
 
       {tab === 'products' ? <ProductsTab token={token} /> : null}
+      {tab === 'users' ? <UsersTab token={token} /> : null}
 
       {tab === 'orders' && <>
       {/* Stats */}

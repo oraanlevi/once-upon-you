@@ -16,7 +16,9 @@
       "lastName": "Levi",
       "passwordHash": "$2b$12$us7XOQa/rnSo.GG3mwcgxuBIDy0BdnjR68iMGD/m9c4nogNuf35.G",
       "savedShipping": null,
-      "createdAt": "2026-04-30T00:40:20.499Z"
+      "createdAt": "2026-04-30T00:40:20.499Z",
+      "resetToken": "896f029bfb96cf6f77daa974de441fc16f99f30026aaf64af15615538a9320d4",
+      "resetTokenExpiry": "2026-05-14T05:08:11.487Z"
     }
   ]
 }

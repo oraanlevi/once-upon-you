@@ -2872,6 +2872,46 @@ app.post('/api/admin/orders/:orderId/generate', requireAdmin, async (req, res) =
   }
 });
 
+// ─── Admin: list all registered users ────────────────────────────────────────
+
+app.get('/api/admin/users', requireAdmin, async (_req, res) => {
+  try {
+    const users = await readUsers();
+    const orders = [];
+    try {
+      await fs.mkdir(ORDERS_ROOT, { recursive: true });
+      const entries = await fs.readdir(ORDERS_ROOT, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        try {
+          const raw = await fs.readFile(path.join(ORDERS_ROOT, entry.name, 'order.json'), 'utf8');
+          orders.push(JSON.parse(raw));
+        } catch { /* skip */ }
+      }
+    } catch { /* no orders yet */ }
+
+    const orderCountByUser = {};
+    orders.forEach((o) => {
+      const email = o.shipping?.email || o.accountEmail || o.email || '';
+      if (email) orderCountByUser[email] = (orderCountByUser[email] || 0) + 1;
+    });
+
+    const safeUsers = users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      firstName: u.firstName || '',
+      lastName: u.lastName || '',
+      createdAt: u.createdAt || null,
+      savedShipping: u.savedShipping || null,
+      orderCount: orderCountByUser[u.email] || 0,
+    }));
+
+    res.json({ users: safeUsers });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load users.' });
+  }
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 app.listen(port, async () => {
