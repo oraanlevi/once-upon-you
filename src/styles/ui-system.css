@@ -137,18 +137,20 @@ body {
   box-shadow: 0 2px 8px rgba(116, 70, 149, 0.1);
 }
 
-/* logged-in state — borderless, text-only feel */
+/* logged-in state — plain text link */
 .sidebar-auth-btn--user {
-  border-color: transparent;
-  background: transparent;
-  padding: 6px 4px;
-  gap: 9px;
+  all: unset;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(116, 70, 149, 0.65);
+  letter-spacing: 0.01em;
+  padding: 4px 0;
+  transition: color 0.15s;
 }
 
 .sidebar-auth-btn--user:hover {
-  background: rgba(116, 70, 149, 0.05);
-  border-color: transparent;
-  box-shadow: none;
+  color: var(--ui-primary);
 }
 
 .sidebar-auth-avatar {
@@ -3745,107 +3747,116 @@ button.top-progress-chip {
   border-radius: 8px;
 }
 
-/* ─── Account Inline Page ─────────────────────────────────────────── */
+/* ─── Account Page (clean) ─────────────────────────────────────────── */
 
-.account-inline-page {
+.acct-page {
   width: 100%;
-  max-width: 620px;
+  max-width: 680px;
   margin: 0 auto;
-  padding: 32px 24px 56px;
+  padding: 28px 36px 60px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 0;
 }
 
-/* nav row: ← Back (left) + Log out (right) */
-.account-nav-row {
+/* top strip */
+.acct-topstrip {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 40px;
 }
 
-.account-back-btn {
-  background: none;
-  border: none;
-  color: rgba(116, 70, 149, 0.6);
+.acct-back {
+  all: unset;
+  cursor: pointer;
   font-size: 13px;
+  color: rgba(116, 70, 149, 0.55);
   font-weight: 500;
+  transition: color 0.15s;
+}
+.acct-back:hover { color: var(--ui-primary); }
+
+.acct-logout {
+  all: unset;
   cursor: pointer;
-  padding: 0;
-  letter-spacing: 0.01em;
-  transition: color 0.15s ease;
-}
-
-.account-back-btn:hover {
-  color: var(--ui-primary);
-}
-
-.account-logout-btn {
-  background: none;
-  border: none;
   font-size: 12px;
-  font-weight: 500;
-  color: rgba(79, 66, 85, 0.4);
-  cursor: pointer;
-  padding: 0;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  transition: color 0.15s ease;
+  color: rgba(79, 66, 85, 0.35);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  transition: color 0.15s;
 }
-
-.account-logout-btn:hover {
-  color: #c0392b;
-}
+.acct-logout:hover { color: #c0392b; }
 
 /* greeting */
-.account-greeting {
-  padding: 0;
+.acct-greeting {
+  margin-bottom: 36px;
 }
 
-.account-greeting-text {
-  margin: 0 0 3px;
-  font-size: 28px;
+.acct-name {
+  margin: 0 0 6px;
+  font-size: 36px;
   font-weight: 700;
   color: var(--ui-text);
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
 }
 
-.account-greeting-email {
+.acct-email {
   margin: 0;
-  font-size: 12.5px;
-  color: rgba(79, 66, 85, 0.38);
-  letter-spacing: 0.01em;
+  font-size: 13px;
+  color: rgba(79, 66, 85, 0.35);
 }
 
 /* tabs */
-.account-tabs {
+.acct-tabs {
   display: flex;
   gap: 0;
   border-bottom: 1px solid rgba(116, 70, 149, 0.1);
+  margin-bottom: 28px;
 }
 
-.account-tab {
-  padding: 8px 20px 10px;
-  border: none;
-  background: none;
+.acct-tab {
+  all: unset;
+  cursor: pointer;
+  padding: 10px 24px 12px;
   font-size: 13px;
   font-weight: 500;
-  color: rgba(79, 66, 85, 0.45);
-  cursor: pointer;
+  color: rgba(79, 66, 85, 0.4);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   letter-spacing: 0.02em;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color 0.15s, border-color 0.15s;
 }
-
-.account-tab:hover {
-  color: var(--ui-primary);
-}
-
-.account-tab.is-active {
+.acct-tab:hover { color: var(--ui-primary); }
+.acct-tab.is-active {
   color: var(--ui-primary);
   font-weight: 600;
   border-bottom-color: var(--ui-primary);
+}
+
+/* orders list */
+.acct-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.acct-loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.acct-empty {
+  padding: 48px 0;
+  text-align: center;
+  color: rgba(79, 66, 85, 0.45);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
 }
 
 /* ── Mobile ── */

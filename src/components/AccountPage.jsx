@@ -74,57 +74,37 @@ function AccountPage({ user, token, apiBase, onLogout, onClose, onShippingSaved 
   };
 
   return (
-    <section className="account-inline-page">
+    <section className="acct-page">
 
-      {/* ── Nav row ── */}
-      <div className="account-nav-row">
-        <button type="button" className="account-back-btn" onClick={onClose}>
-          ← Back
-        </button>
-        <button type="button" className="account-logout-btn" onClick={onLogout}>
-          Log out
-        </button>
+      {/* top strip: back + logout */}
+      <div className="acct-topstrip">
+        <button type="button" className="acct-back" onClick={onClose}>← Back</button>
+        <button type="button" className="acct-logout" onClick={onLogout}>Log out</button>
       </div>
 
-      {/* ── Greeting ── */}
-      <div className="account-greeting">
-        <h1 className="account-greeting-text">Hi, {user?.firstName || 'there'}</h1>
-        <p className="account-greeting-email">{user?.email}</p>
+      {/* greeting */}
+      <div className="acct-greeting">
+        <h1 className="acct-name">Hi, {user?.firstName || 'there'}</h1>
+        <p className="acct-email">{user?.email}</p>
       </div>
 
-      {/* ── Tabs ── */}
-      <div className="account-tabs">
-        <button
-          type="button"
-          className={`account-tab${activeTab === 'orders' ? ' is-active' : ''}`}
-          onClick={() => setActiveTab('orders')}
-        >
-          Orders
-        </button>
-        <button
-          type="button"
-          className={`account-tab${activeTab === 'shipping' ? ' is-active' : ''}`}
-          onClick={() => setActiveTab('shipping')}
-        >
-          Shipping
-        </button>
+      {/* tabs */}
+      <div className="acct-tabs">
+        <button type="button" className={`acct-tab${activeTab === 'orders' ? ' is-active' : ''}`} onClick={() => setActiveTab('orders')}>Orders</button>
+        <button type="button" className={`acct-tab${activeTab === 'shipping' ? ' is-active' : ''}`} onClick={() => setActiveTab('shipping')}>Shipping</button>
       </div>
 
-      {/* ── Orders ── */}
+      {/* orders */}
       {activeTab === 'orders' && (
         ordersLoading ? (
-          <div className="account-loading">
-            <div className="account-loading-spinner" />
-          </div>
+          <div className="acct-loading"><div className="account-loading-spinner" /></div>
         ) : orders.length === 0 ? (
-          <div className="account-empty-state">
+          <div className="acct-empty">
             <p>No orders yet.</p>
-            <button type="button" className="account-cta-btn" onClick={onClose}>
-              Start Building →
-            </button>
+            <button type="button" className="account-cta-btn" onClick={onClose}>Start Building →</button>
           </div>
         ) : (
-          <div className="account-orders-grid">
+          <div className="acct-orders">
             {orders.map((order) => (
               <div key={order.orderId} className="account-order-card">
                 <div className="account-order-top">
@@ -160,7 +140,7 @@ function AccountPage({ user, token, apiBase, onLogout, onClose, onShippingSaved 
         )
       )}
 
-      {/* ── Shipping ── */}
+      {/* shipping */}
       {activeTab === 'shipping' && (
         <div className="account-shipping-section">
           <form className="account-shipping-form" onSubmit={handleShippingSave}>

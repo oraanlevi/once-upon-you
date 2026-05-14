@@ -1600,9 +1600,6 @@ function App() {
                 className="sidebar-auth-btn sidebar-auth-btn--user"
                 onClick={() => setShowAccountPage(true)}
               >
-                <span className="sidebar-auth-avatar">
-                  {[authUser.firstName?.charAt(0), authUser.lastName?.charAt(0)].filter(Boolean).join('').toUpperCase() || authUser.email?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
                 <span className="sidebar-auth-name">Profile</span>
               </button>
             ) : (
