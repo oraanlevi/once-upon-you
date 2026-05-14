@@ -94,7 +94,7 @@ function AccountPage({ user, token, apiBase, onLogout, onClose, onShippingSaved 
 
         {/* ── Greeting ── */}
         <div className="account-greeting">
-          <h2 className="account-greeting-text">Hi, {user?.firstName || displayName} 👋</h2>
+          <h2 className="account-greeting-text">Hi, {user?.firstName || displayName}</h2>
           <p className="account-greeting-email">{user?.email}</p>
         </div>
 
