@@ -1600,6 +1600,9 @@ function App() {
                 className="sidebar-auth-btn sidebar-auth-btn--user"
                 onClick={() => setShowAccountPage(true)}
               >
+                <span className="sidebar-profile-icon" aria-hidden="true">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
                 <span className="sidebar-auth-name">Profile</span>
               </button>
             ) : (

@@ -137,20 +137,38 @@ body {
   box-shadow: 0 2px 8px rgba(116, 70, 149, 0.1);
 }
 
-/* logged-in state — plain text link */
+/* logged-in state */
 .sidebar-auth-btn--user {
-  all: unset;
-  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(116, 70, 149, 0.15);
+  background: rgba(116, 70, 149, 0.05);
+  color: #5a3a7a;
   font-size: 13px;
   font-weight: 500;
-  color: rgba(116, 70, 149, 0.65);
-  letter-spacing: 0.01em;
-  padding: 4px 0;
-  transition: color 0.15s;
+  cursor: pointer;
+  transition: all 0.18s ease;
 }
 
 .sidebar-auth-btn--user:hover {
-  color: var(--ui-primary);
+  background: rgba(116, 70, 149, 0.1);
+  border-color: rgba(116, 70, 149, 0.25);
+}
+
+.sidebar-profile-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #9b6ec8, #6a3d9a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: white;
 }
 
 .sidebar-auth-avatar {
@@ -3747,16 +3765,15 @@ button.top-progress-chip {
   border-radius: 8px;
 }
 
-/* ─── Account Page (clean) ─────────────────────────────────────────── */
+/* ─── Account Page ─────────────────────────────────────────── */
 
 .acct-page {
   width: 100%;
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 28px 36px 60px;
+  padding: 36px 48px 60px 48px;
   display: flex;
   flex-direction: column;
   gap: 0;
+  box-sizing: border-box;
 }
 
 /* top strip */
@@ -3764,14 +3781,14 @@ button.top-progress-chip {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 40px;
+  margin-bottom: 48px;
 }
 
 .acct-back {
   all: unset;
   cursor: pointer;
   font-size: 13px;
-  color: rgba(116, 70, 149, 0.55);
+  color: rgba(116, 70, 149, 0.5);
   font-weight: 500;
   transition: color 0.15s;
 }
@@ -3781,31 +3798,30 @@ button.top-progress-chip {
   all: unset;
   cursor: pointer;
   font-size: 12px;
-  color: rgba(79, 66, 85, 0.35);
-  font-weight: 400;
-  letter-spacing: 0.03em;
+  color: rgba(79, 66, 85, 0.3);
   transition: color 0.15s;
 }
 .acct-logout:hover { color: #c0392b; }
 
-/* greeting */
+/* greeting — left-anchored title */
 .acct-greeting {
-  margin-bottom: 36px;
+  margin-bottom: 40px;
 }
 
 .acct-name {
-  margin: 0 0 6px;
-  font-size: 36px;
+  margin: 0 0 5px;
+  font-size: 42px;
   font-weight: 700;
   color: var(--ui-text);
-  letter-spacing: -0.5px;
-  line-height: 1.1;
+  letter-spacing: -0.8px;
+  line-height: 1.05;
 }
 
 .acct-email {
   margin: 0;
   font-size: 13px;
-  color: rgba(79, 66, 85, 0.35);
+  color: rgba(79, 66, 85, 0.32);
+  letter-spacing: 0.01em;
 }
 
 /* tabs */
@@ -3813,19 +3829,20 @@ button.top-progress-chip {
   display: flex;
   gap: 0;
   border-bottom: 1px solid rgba(116, 70, 149, 0.1);
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .acct-tab {
   all: unset;
   cursor: pointer;
-  padding: 10px 24px 12px;
+  padding: 10px 28px 12px 0;
   font-size: 13px;
   font-weight: 500;
   color: rgba(79, 66, 85, 0.4);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   letter-spacing: 0.02em;
+  margin-right: 8px;
   transition: color 0.15s, border-color 0.15s;
 }
 .acct-tab:hover { color: var(--ui-primary); }
@@ -3840,22 +3857,21 @@ button.top-progress-chip {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  max-width: 640px;
 }
 
 .acct-loading {
   display: flex;
   justify-content: center;
-  padding: 40px 0;
+  padding: 48px 0;
 }
 
 .acct-empty {
-  padding: 48px 0;
-  text-align: center;
-  color: rgba(79, 66, 85, 0.45);
+  padding: 60px 0;
+  color: rgba(79, 66, 85, 0.4);
   font-size: 14px;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 16px;
 }
 
